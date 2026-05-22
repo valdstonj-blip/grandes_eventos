@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ESTADO MAIOR GERAL PM/3</title>
+    <script>
+      (function() {
+        var path = window.location.pathname;
+        if (window.location.hostname.endsWith('github.io') && !path.endsWith('/') && !path.split('/').pop().includes('.')) {
+          window.location.replace(window.location.href + '/');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
