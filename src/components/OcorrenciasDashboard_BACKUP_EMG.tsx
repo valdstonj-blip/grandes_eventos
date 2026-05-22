@@ -15,11 +15,7 @@ import {
   CheckCircle2,
   FileText,
   Shield,
-  X,
-  MapPin,
-  Map,
-  ChevronDown,
-  Check
+  X
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -43,9 +39,7 @@ const CSV_URL = G_SHEET_CSV_URL(SHEET_ID, GID);
 export const OcorrenciasDashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOPMs, setSelectedOPMs] = useState<string[]>([]);
-  const [isOPMDropdownOpen, setIsOPMDropdownOpen] = useState(false);
-  const [selectedLocalForMap, setSelectedLocalForMap] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
   const fetchData = async () => {
@@ -77,45 +71,16 @@ export const OcorrenciasDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Helper de normalização global para evitar inconsistências
-  const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s/g, '');
-
-  // Lista de OPMs únicas coletadas dinamicamente
-  const allOPMs = useMemo(() => {
-    const opms = new Set<string>();
-    data.forEach(item => {
-      const keys = Object.keys(item);
-      const opmKey = keys.find(k => {
-        const norm = normalizeStr(k);
-        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-      });
-      if (opmKey) {
-        const val = String(item[opmKey]).trim().toUpperCase();
-        if (val && val !== '-' && val !== 'N/A' && val !== 'PCA') {
-          opms.add(val);
-        }
-      }
-    });
-    return Array.from(opms).sort();
-  }, [data]);
-
   const filteredData = useMemo(() => {
     return data.filter(item => {
-      if (selectedOPMs.length > 0) {
-        const keys = Object.keys(item);
-        const opmKey = keys.find(k => {
-          const norm = normalizeStr(k);
-          return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-        });
-        if (opmKey) {
-          const val = String(item[opmKey]).trim().toUpperCase();
-          return selectedOPMs.includes(val);
-        }
-        return false;
-      }
-      return true;
+      return Object.values(item).some(val => 
+        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+      );
     });
-  }, [data, selectedOPMs]);
+  }, [data, searchTerm]);
+
+  // Helper de normalização global para evitar inconsistências
+  const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s/g, '');
 
   // Helper para buscar soma total de colunas por padrão
   const getSumByPattern = (pattern: string, dataSource: any[]) => {
@@ -240,9 +205,9 @@ export const OcorrenciasDashboard: React.FC = () => {
       styles: { fontSize: 9, cellPadding: 3 },
     });
 
-    // 2. Quadro Detalhado por OPM
-    // Lógica para agrupar dados por OPM
-    const opmMap: Record<string, any> = {};
+    // 2. Quadro Detalhado por PCA
+    // Lógica para agrupar dados por PCA
+    const pcaMap: Record<string, any> = {};
     const keys = data.length > 0 ? Object.keys(data[0]) : [];
     
     const getValFromItem = (item: any, patterns: string[]) => {
@@ -263,22 +228,22 @@ export const OcorrenciasDashboard: React.FC = () => {
     };
 
     filteredData.forEach(item => {
-      let opmName = getValFromItem(item, ['opm', 'pca', 'unidade']) || 'N/A';
-      opmName = opmName.toUpperCase();
+      let pcaName = getValFromItem(item, ['pca']) || 'N/A';
+      pcaName = pcaName.toUpperCase();
       
-      if (!opmMap[opmName]) {
-        opmMap[opmName] = { envios: 0, adultos: 0, adol: 0, armas: 0, perf: 0, simul: 0 };
+      if (!pcaMap[pcaName]) {
+        pcaMap[pcaName] = { envios: 0, adultos: 0, adol: 0, armas: 0, perf: 0, simul: 0 };
       }
       
-      opmMap[opmName].envios += 1;
-      opmMap[opmName].adultos += getNumFromItem(item, ['adulto']);
-      opmMap[opmName].adol += getNumFromItem(item, ['adolescente']);
-      opmMap[opmName].armas += getNumFromItem(item, ['arma']);
-      opmMap[opmName].perf += getNumFromItem(item, ['perfuro']);
-      opmMap[opmName].simul += getNumFromItem(item, ['simulacro']);
+      pcaMap[pcaName].envios += 1;
+      pcaMap[pcaName].adultos += getNumFromItem(item, ['adulto']);
+      pcaMap[pcaName].adol += getNumFromItem(item, ['adolescente']);
+      pcaMap[pcaName].armas += getNumFromItem(item, ['arma']);
+      pcaMap[pcaName].perf += getNumFromItem(item, ['perfuro']);
+      pcaMap[pcaName].simul += getNumFromItem(item, ['simulacro']);
     });
 
-    const opmRows = Object.entries(opmMap).map(([name, stats]) => [
+    const pcaRows = Object.entries(pcaMap).map(([name, stats]) => [
       name,
       String(stats.envios),
       String(stats.adultos),
@@ -289,11 +254,11 @@ export const OcorrenciasDashboard: React.FC = () => {
     ]);
 
     doc.setFontSize(12);
-    doc.text('Ocorrências Detalhadas por OPM', 14, (doc as any).lastAutoTable.finalY + 15);
+    doc.text('Ocorrências Detalhadas por Posto (PCA)', 14, (doc as any).lastAutoTable.finalY + 15);
 
     autoTable(doc, {
-      head: [['OPM / POSTO', 'ENVIOS', 'ADULT', 'ADOL', 'ARMA', 'PERF', 'SIMUL']],
-      body: opmRows,
+      head: [['PCA / POSTO', 'ENVIOS', 'ADULT', 'ADOL', 'ARMA', 'PERF', 'SIMUL']],
+      body: pcaRows,
       startY: (doc as any).lastAutoTable.finalY + 20,
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42] }, // Slate 900 para diferenciar
@@ -309,13 +274,13 @@ export const OcorrenciasDashboard: React.FC = () => {
       return d.length > 5;
     }).map(item => {
       const carimbo = getValFromItem(item, ['carimbo', 'data/hora', 'timestamp']);
-      const opm = getValFromItem(item, ['opm', 'pca', 'unidade']) || 'N/A';
+      const pca = getValFromItem(item, ['pca']) || 'N/A';
       const turno = getValFromItem(item, ['turno', 'dia']) || '';
       const dinamica = getValFromItem(item, ['dinamica', 'relato', 'historico', 'descricao']);
       
       return [
         carimbo.replace(/\s/g, '\n'), // Quebra data e hora
-        `${opm}\n${turno}`.trim(),
+        `${pca}\n${turno}`.trim(),
         dinamica
       ];
     });
@@ -327,7 +292,7 @@ export const OcorrenciasDashboard: React.FC = () => {
       doc.text('Relato das Dinâmicas (Histórico)', 14, 15);
       
       autoTable(doc, {
-        head: [['HORÁRIO', 'OPM / TURNO', 'DESCRIÇÃO DA OCORRÊNCIA / DINÂMICA']],
+        head: [['HORÁRIO', 'PCA / TURNO', 'DESCRIÇÃO DA OCORRÊNCIA / DINÂMICA']],
         body: dinamicaRows,
         startY: 20,
         theme: 'grid',
@@ -366,113 +331,34 @@ export const OcorrenciasDashboard: React.FC = () => {
   return (
     <div className="space-y-8 pb-20">
       {/* Search and Action Controls */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full">
-          <div className="relative w-full lg:w-[450px]">
-            <button
-              onClick={() => setIsOPMDropdownOpen(!isOPMDropdownOpen)}
-              className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <Filter className="w-4 h-4 text-sky-500 shrink-0" />
-                {selectedOPMs.length === 0 ? (
-                  <span className="text-slate-500 font-extrabold">Todas as OPMs Ativas</span>
-                ) : (
-                  <span className="text-sky-600 font-extrabold">
-                    {selectedOPMs.length} OPM(s) Selecionada(s)
-                  </span>
-                )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOPMDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isOPMDropdownOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-30" 
-                  onClick={() => setIsOPMDropdownOpen(false)} 
-                />
-                <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
-                  <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
-                    <span>Selecione as OPMs</span>
-                    {selectedOPMs.length > 0 && (
-                      <button
-                        onClick={() => setSelectedOPMs([])}
-                        className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
-                      >
-                        Limpar Todas
-                      </button>
-                    )}
-                  </div>
-                  {allOPMs.map(opm => {
-                    const isSelected = selectedOPMs.includes(opm);
-                    return (
-                      <button
-                        key={opm}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedOPMs(selectedOPMs.filter(o => o !== opm));
-                          } else {
-                            setSelectedOPMs([...selectedOPMs, opm]);
-                          }
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                          isSelected 
-                            ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
-                            : 'hover:bg-slate-50 text-slate-600'
-                        }`}
-                      >
-                        <span>{opm}</span>
-                        {isSelected && <Check className="w-4 h-4 text-sky-500" />}
-                      </button>
-                    );
-                  })}
-                  {allOPMs.length === 0 && (
-                    <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhuma OPM encontrada</p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 lg:flex items-center gap-2 w-full lg:w-auto">
-            <button 
-              onClick={fetchData} 
-              className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
-            >
-              <RefreshCw className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
-              Sincronizar
-            </button>
-            <button 
-              onClick={exportPDF} 
-              className="flex items-center justify-center gap-2 bg-sky-600 text-white px-3 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition-all active:scale-95"
-            >
-              <FileDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
-              Exportar PDF
-            </button>
-          </div>
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div className="relative w-full lg:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Pesquisar registros..."
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:ring-2 focus:ring-sky-500/20 outline-none shadow-inner"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-
-        {/* Badge lists for filtered OPMs */}
-        {selectedOPMs.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 items-center justify-start py-1 px-1 border-t border-slate-100 pt-3">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros Ativos:</span>
-            {selectedOPMs.map(opm => (
-              <span 
-                key={opm} 
-                className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider"
-              >
-                {opm}
-                <button 
-                  onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))}
-                  className="hover:bg-sky-200 p-0.5 rounded-full transition-colors"
-                >
-                  <X className="w-2.5 h-2.5 text-sky-600" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+        
+        <div className="grid grid-cols-2 lg:flex items-center gap-2 w-full lg:w-auto">
+          <button 
+            onClick={fetchData} 
+            className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
+          >
+            <RefreshCw className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
+            Sincronizar
+          </button>
+          <button 
+            onClick={exportPDF} 
+            className="flex items-center justify-center gap-2 bg-sky-600 text-white px-3 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition-all active:scale-95"
+          >
+            <FileDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
+            Exportar PDF
+          </button>
+        </div>
       </div>
 
       {/* Main Stats Grid */}
@@ -576,8 +462,7 @@ export const OcorrenciasDashboard: React.FC = () => {
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Carimbo</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dia/Turno</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Local</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">PCA</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
@@ -597,30 +482,6 @@ export const OcorrenciasDashboard: React.FC = () => {
                   return key ? String(item[key]) : '-';
                 };
 
-                const getEmailVal = () => {
-                  const emailPatterns = ['email', 'mail'];
-                  const key = keys.find(k => {
-                    const norm = normalizeStr(k);
-                    return emailPatterns.some(p => norm.includes(p));
-                  });
-                  return key ? String(item[key]) : '-';
-                };
-
-                const getLocalVal = () => {
-                  const localPatterns = ['local', 'endereco', 'rua', 'bairro', 'zona', 'onde', 'municipio', 'cidade'];
-                  const excludePatterns = ['email', 'mail', 'carimbo', 'temp', 'data', 'hora'];
-                  
-                  const key = keys.find(k => {
-                    const norm = normalizeStr(k);
-                    const hasLocalKey = localPatterns.some(p => norm.includes(p));
-                    const hasExcludeKey = excludePatterns.some(p => norm.includes(p));
-                    return hasLocalKey && !hasExcludeKey;
-                  });
-                  return key ? String(item[key]) : '-';
-                };
-
-                const localValue = getLocalVal();
-
                 return (
                   <tr 
                     key={idx} 
@@ -634,31 +495,10 @@ export const OcorrenciasDashboard: React.FC = () => {
                       {getVal(['dia'])} - {getVal(['turno'])}
                     </td>
                     <td className="px-6 py-4 text-[11px] font-black text-slate-900 lowercase">
-                      {getEmailVal()}
+                      {getVal(['email', 'mail', 'endereco'])}
                     </td>
                     <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-                      {getVal(['opm', 'pca', 'unidade'])}
-                    </td>
-                    <td className="px-6 py-4 text-[11px] text-slate-700 font-bold uppercase min-w-[200px]">
-                      {localValue && localValue !== '-' ? (
-                        <div className="flex items-center gap-2">
-                          <span className="truncate max-w-[130px] font-mono text-slate-500" title={localValue}>
-                            {localValue}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLocalForMap(localValue);
-                            }}
-                            className="p-1.5 bg-sky-50 hover:bg-sky-600 text-sky-600 hover:text-white border border-sky-100 rounded-lg transition-all active:scale-95 flex items-center justify-center shadow-sm"
-                            title="Visualizar Mapa do Local"
-                          >
-                            <MapPin className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono">-</span>
-                      )}
+                      {getVal(['pca'])}
                     </td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-emerald-50/30 text-emerald-700">{getVal(['adulto'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-amber-50/30 text-amber-700">{getVal(['adolescente'])}</td>
@@ -675,7 +515,7 @@ export const OcorrenciasDashboard: React.FC = () => {
             {/* Table Footer with Totals */}
             <tfoot className="sticky bottom-0 bg-slate-900 font-black text-white z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <tr>
-                <td colSpan={5} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
+                <td colSpan={4} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
                   Totais Acumulados da Listagem:
                 </td>
                 <td className="px-6 py-5 text-center text-sm border-t border-slate-800 bg-slate-800">{totals.adultos}</td>
@@ -758,70 +598,6 @@ export const OcorrenciasDashboard: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-
-      {/* Map Modal */}
-      <AnimatePresence>
-        {selectedLocalForMap && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-left">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedLocalForMap(null)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative bg-white w-full max-w-4xl rounded-t-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden z-[101] border border-white/20 mt-auto sm:mt-0"
-            >
-              <div className="bg-slate-900 p-6 sm:p-8 text-white relative">
-                <div className="absolute top-0 right-0 p-4 sm:p-6">
-                  <button 
-                    onClick={() => setSelectedLocalForMap(null)}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors group"
-                  >
-                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-white transition-colors" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="p-3 sm:p-4 bg-sky-500/20 rounded-2xl border border-sky-500/20">
-                    <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-sky-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">Mapa Operacional</h3>
-                    <p className="text-sky-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Localizador PM/3</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-2 bg-slate-950 aspect-[16/10] sm:aspect-[16/9] min-h-[350px] relative">
-                <iframe 
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedLocalForMap)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-                  className="w-full h-full rounded-2xl border-0 shadow-inner"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-              
-              <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex justify-between items-center gap-4">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 truncate max-w-sm">
-                  {selectedLocalForMap}
-                </span>
-                <button 
-                  onClick={() => setSelectedLocalForMap(null)}
-                  className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
-                >
-                  Fechar Mapa
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
-

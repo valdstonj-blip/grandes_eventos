@@ -1,83 +1,119 @@
-# 🎖️ Manual Mestre de Desenvolvimento: Dashboard Militar Professional
+# 🎖️ Manual Mestre de Desenvolvimento: Dashboard Militar Profissional (V3 - Suprema)
 
-Este documento é um guia de nível **Sênior** projetado para orientar a criação e evolução de sistemas de alta prontidão e confiabilidade, utilizando o padrão visual e técnico do EMG PM/3.
-
----
-
-## 1. Arquitetura e Identidade Visual (Design System)
-
-Um sistema militar exige **densidade de informação** sem perder a **clareza**. O design deve transmitir autoridade e organização.
-
-### A. Paleta de Cores e Tipografia
-*   **Background Geral:** `bg-slate-50` (Transmite limpeza e foco).
-*   **Acentos Navy (Autoridade):** `#0f172a` (Slate 900) para Header e Footer.
-*   **Cards de Dados:** `bg-white` com `shadow-xl` e bordas sutis `border-slate-200`.
-*   **Tipografia:** Letras MAIÚSCULAS com `tracking-widest` para rótulos técnicos. Números em `font-black` para rápida leitura de estatísticas.
-
-### B. O Componente de Tabela "Fiel"
-A tabela deve ser tratada como um banco de dados visual:
-*   **Sticky Header:** O cabeçalho deve estar sempre visível (`sticky top-0`). Use `bg-slate-900` e texto `sky-400` para contraste.
-*   **Sticky Footer:** O rodapé de totais deve "flutuar" no final da rolagem (`sticky bottom-0`) usando `bg-slate-900` e `text-white` para destacar a soma final.
-*   **Interatividade:** Cada linha deve ser um `motion.tr` com `hover:bg-sky-50`. O clique deve disparar um Modal de detalhes.
+Este documento é o guia definitivo de nível **Sênior / Principal Engineer** projetado para orientar a criação, manutenção e evolução de sistemas de alta prontidão e confiabilidade operacional (EMG PM/3). Ele condensa as melhores práticas aplicadas à arquitetura do seu dashboard.
 
 ---
 
-## 2. Ecossistema de Dados: Sincronização Google Sheets
+## 1. Arquitetura e Identidade Visual (Design System de Alta Prontidão)
 
-O maior erro em sistemas de dashboards é a dependência de um banco de dados complexo quando uma planilha resolve.
+Mapeamento visual rigoroso baseado na doutrina de design utilitário-militar. O objetivo é a **máxima densidade com mínima fadiga cognitiva**.
 
-### A. Preparação da Planilha (A Raiz da Verdade)
-1.  **Publicação:** A planilha Google DEVE ser publicada via **Arquivo > Compartilhar > Publicar na Web**.
-2.  **Formato:** Escolha **Valores Separados por Vírgula (.csv)**.
-3.  **Link Direto:** O link deve terminar em `output=csv`. Este é o link que o sistema consumirá.
+### A. Paleta de Cores e Hierarquia Tipográfica
+*   **Background Base:** `bg-slate-50` (fundo claro ideal para leitura contínua).
+*   **Contêineres Principais (Navy):** `#0f172a` (`slate-900`/`slate-950`). Transmite solidez, segurança e estabilidade institucional.
+*   **Contraste do Sistema (Sky Blue):** `sky-400` / `sky-500` para destaque técnico e indicadores de status.
+*   **Tipografia Híbrida Inteligente:**
+    *   Exibições de Status/Prefixos: Letras **MAIÚSCULAS** com `tracking-widest` (ex: `tracking-[0.2em] font-black text-xs`).
+    *   Dados Quantitativos: Tipografia Monoespace (`font-mono`) com espessura pesada (`font-black`/`font-extrabold`) para evitar desalinhamento visual de casas numéricas.
 
-### B. Lógica de Sincronização (Sync & Persistence)
-*   **Fetch Robusto:** O sistema deve buscar o CSV, converter em JSON e salvar no `localStorage`. Isso garante que, se a internet falhar ou a planilha estiver fora do ar, o usuário veja os **últimos dados carregados**.
-*   **Tratamento de Strings:** Planilhas manuais têm erros (espaços extras, acentos). Use uma função de "Limpeza de Chaves" para transformar `Qtd. Armas ` em `armas`. Isso evita que o código quebre por causa de um espaço.
-*   **Badge de Status:** Implemente um badge visual (ex: `Registros Ativos`) com uma animação de "pulso" (`animate-pulse`) em verde, indicando que a conexão com a planilha está viva.
-
----
-
-## 3. Inteligência de Soma e Normalização
-
-Não mapeie colunas pelo nome exato. Crie uma lógica que procure padrões:
-*   **Regra de Soma:** Varra as colunas. Se o nome contiver "Qtd", "Total", "Adulto" ou "Arma", e o valor for um número válido (menor que um limite razoável, ex: 1000, para evitar somar RGs/CPFs), adicione ao acumulador.
-*   **Campos de Texto:** Colunas que contenham "Dinâmica", "Relato" ou "Observação" devem ser tratadas como texto longo e exibidas com `whitespace-pre-wrap` para manter a formatação original do usuário.
+### B. O Componente de Tabela "Fiel" (The Sticky Shield)
+A tabela deve se comportar como uma folha de cálculo estática, mas com transição fluida:
+*   **Contenção Vertical:** Limite de altura fixo (`max-h-[600px]`) envelopado por uma div com `overflow-auto`.
+*   **Sticky Header:** O cabeçalho da tabela deve flutuar com `sticky top-0 z-20 bg-slate-900 text-sky-400` para que os rótulos de dados nunca sumam de vista na rolagem.
+*   **Sticky Footer (Totalizador Geral):** O rodapé deve usar `sticky bottom-0 z-20 bg-slate-900 border-t border-slate-800` com uma sombra superior discreta para dar a sensação de flutuação, garantindo acessibilidade imediata ao total acumulado em qualquer altura da rolagem.
+*   **Hover Interativo Inteligente:** Cada linha (`motion.tr` ou `tr`) deve receber transição suave e destacar itens em `hover:bg-sky-50/70`.
 
 ---
 
-## 4. Modal de Detalhes (High Density)
+## 2. Ecossistema de Sincronização Google Sheets (Offline-First)
 
-O modal não deve apenas repetir a linha, mas expandir a informação.
-*   **Grid Adaptativo:** Use um grid de 2 colunas para campos curtos (Datas, IDs) e 1 coluna total para campos longos (Relatos).
-*   **Foco Visual:** O cabeçalho do modal deve ser `bg-slate-950` com ícone em `sky-400` para manter a identidade.
+Mapeie e processe dados em silos separados de forma desacoplada, utilizando memória volátil secundária como barreira de segurança contra quedas de sinal.
 
----
+### A. Preparação e Linkagem de Planilhas Independentes
+1.  **Modo de Exportação:** Toda e qualquer planilha deve ser publicada individualmente na web (**Arquivo > Compartilhar > Publicar na Web**).
+2.  **Formato do Link:** Escolha estritamente o formato **CSV (Valores Separados por Vírgula)** e extraia o hash de identificação (`SHEET_ID`) e o identificador do subpainel (`GID`).
+3.  **URLs Dedicadas:** Armazene os links em constantes globais centralizadas no topo do módulo. Exemplo:
+    ```typescript
+    const G_SHEET_CSV_URL = (id: string, gid: string) => `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
+    ```
 
-## 5. Engenharia de PDF Professional
-
-O PDF é o documento de exportação oficial. Ele deve ser impecável.
-*   **Biblioteca:** Utilize `jspdf` com `jspdf-autotable`.
-*   **Cabeçalho Oficial:** Insira o Brasão ou o nome da Unidade centralizado.
-*   **Formatação de Tabela:**
-    *   Use cores alternadas nas linhas (`alternateRowStyles`).
-    *   Células com números devem ter `halign: 'center'`.
-    *   Textos longos devem usar a propriedade `columnStyles` para definir uma largura máxima e permitir a quebra de linha automática.
-*   **Rodapé de Página:** Adicione data/hora da geração e numeração de páginas (`Página X de Y`).
+### B. Mecanismo de Cache e Sincronismo (The Resilient Handshake)
+*   **Políticas de Retentativa:** Ao engajar em requisições assíncronas do Sheets, o app de ponta deve tentar receber os dados mais novos. Se por ventura ocorrer falha de rede ou timeout (Servidor do Google offline), leia **silenciosamente** os dados indexados pelo `localStorage`.
+*   **Badge de Sincronização Inteligente:** Indique de onde vieram os dados carregados usando badges transparentes com animação infinita de pulso (`animate-pulse`). Exiba visualmente a string "ONLINE" em verde se vier de requisição fresca, ou "CACHE LOCAL" em âmbar/cinza com a data e hora em que ocorreu a última coleta bem-sucedida.
 
 ---
 
-## 6. O Prompt de Criação Perfeito (Engenharia de Prompt)
+## 3. Inteligência de Busca, Soma e Normalização (Sem Quebra de Código)
 
-Para que a IA gere um sistema com este nível de detalhe, copie e cole este comando:
+A entrada de dados em planilhas mantidas por humanos é falha por natureza: espaços à esquerda, acentos inesperados e mistura de minúsculas e maiúsculas. O sistema deve tratar essa bagunça internamente.
 
-> "Construa um Dashboard Profissional com a seguinte estrutura:
-> 1. **Layout Militar:** Use Navy (#0f172a) nos containers principais e Slate 50 no fundo.
-> 2. **Sincronização:** Implemente um `fetch` para CSV do Google Sheets com persistência em `localStorage`. Adicione um botão 'Sincronizar' com ícone de Refresh.
-> 3. **Tabela Avançada:** Crie uma tabela com `max-h-[600px]`, cabeçalho e rodapé de totais FIXOS (sticky). As linhas devem ser clicáveis para abrir um Modal de Detalhes em Grid.
-> 4. **Filtro Inteligente:** Adicione um campo de busca que filtre todas as colunas simultaneamente.
-> 5. **Exportação PDF:** Configure `jspdf-autotable` para gerar um relatório profissional com cabeçalho da Unidade e totais de produtividade destacados.
-> 6. **Visual:** Use ícones da biblioteca `lucide-react` e animações da `motion/react` para transições suaves."
+### A. Algorítmo de Normalização de Chaves
+Antes de ler ou processar colunas, use uma função pura para expurgar caracteres especiais, acentos, pontuações e espaçamento indevido dos cabeçalhos. Isso garante o funcionamento dinâmico do sistema mesmo se o operador mudar "Ocorrência " para "Ocorrencia":
+```typescript
+const normalize = (str: string): string => {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Limpa acentos
+    .trim()
+    .replace(/\s+/g, " "); // Colapsa múltiplos espaços em um único espaço comum
+};
+```
+
+### B. Formulação Acumulativa por Duplo Padrão (Double Pattern Matching)
+Para extrair taxas específicas agrupadas (como Faltas no grupo POO vs Faltas no grupo POE), desenvolvemos a busca matricial flexível combinada:
+*   **Lógica de Atribuição:** Vasculhe as colunas em busca da existência de DOIS termos simultâneos (ex: `'falta'` e `'poo'`).
+*   **Prevenção de Falsos Positivos:** Bloqueie do totalizador colunas identificadoras (como CPF, RG, Número de Matrícula, Hora de Escala) varrendo listas pretas (`blacklist`) de palavras-chave.
+*   **Validação de Tipo Dinâmica:** Se o conteúdo da coluna for texto textual descritivo (`"SIM"`, `"X"`, `"S"`), mapeie o peso como `1`. Se o valor puder ser reduzido a um dígito numérico, parses e somas devem ocorrer com o cuidado de ignorar números muito altos (ex: `> 1000`), blindando os totais contra inclusões indevidas de números de Registro Geral (RG) na soma.
 
 ---
-**Nota Técnica:** Este manual deve ser seguido como base para qualquer novo módulo (Faltas, Ocorrências, Logística), garantindo que todos os aplicativos da sua suíte pareçam ter sido feitos pela mesma equipe de elite.
+
+## 4. Modal de Detalhes de Alta Densidade (O Painel de Auditoria)
+
+O modal de visualização de linha não serve apenas para replicar os dados da tabela, mas para focar e formatar a leitura de ocorrências longas de maneira limpa.
+
+*   **Filtro Antirruído:** No modal, oculte colunas que guardem apenas automação ou controle (Ex: `Email`, `Carimbo de Data/Hora`, `Última Modificação`). Guarde a atenção do oficial estritamente nos dados de combate (Nomes, Quantitativos, Relato de Ocorrência).
+*   **Tratamento de Descrições Longas (Textarea Natural):** Textos extensos (relatos de Obras, Ocorrências, Dinâmica do Fato) devem obrigatoriamente usar estilos de texto pré-formatados com a classe `whitespace-pre-wrap font-mono uppercase text-xs leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200/60 block w-full`. Isso preserva as quebras de linha que o relator inseriu diretamente no formulário ou na planilha.
+*   **Mapeamento em Grid Adaptativo:** Use `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4` para exibir dados breves em minifichas rotuladas.
+
+---
+
+## 5. Engenharia de PDF Profissional Sem Quebra de Margem
+
+O download de relatório do dashboard precisa seguir as diretrizes formais de documentação do Estado-Maior. Um PDF desalinhado destrói a percepção de seriedade governamental.
+
+*   **A Biblioteca Recomendada:** Sempre utilize `jspdf` integrada à extensão `jspdf-autotable`.
+*   **Ajuste de Margem e Quebra Automática:** Use o modo de tabela auto-ajustável (`columnStyles` e `styles: { overflow: 'linebreak' }`). Isso força o motor de renderização a calcular os limites de cada coluna e quebrar as descrições em múltiplas linhas perfeitamente horizontais, em vez de vazarem pelas laterais da impressão.
+*   **Definição do Formato Paisagem (`Landscape`):** Se a tabela tiver mais de 4 ou 5 colunas de controle, inicie a instância em modo paisagem (`l`, `pt`, `a4`) para desfrutar da largura máxima oferecida pelo papel A4.
+*   **Camada Superior de Estilo:**
+    ```typescript
+    headStyles: { fillColor: [15, 23, 42], textColor: [56, 189, 248], fontStyle: 'bold' }
+    ```
+    Isso desenha cabeçalhos no azul marinho militar com textos em azul celeste para máxima definição e elegância visual.
+
+---
+
+## 6. Correção de Rotas para GitHub Pages (Blank Screen / Trailing Slash Patch)
+
+### O Problema do URL do GitHub Pages (Bypass de 404 de Assets)
+Ao implantar aplicativos construídos em React/Vite no GitHub Pages sob repositórios criados em subpastas (ex: `https://seu-usuario.github.io/seu-repositorio`), o navegador muitas vezes tenta carregar recursos a partir do diretório raiz global da conta de hospedagem, resultando em uma incômoda tela em branco e erros `404` nos arquivos estáticos.
+
+### A Solução Estática Baseada em Javascript (Imperativa & Universal)
+Para garantir que o usuário não se depare com uma tela em branco caso digite o link sem a barra final (`/`), inserimos este script de auto-resolução no `<head>` do arquivo principal `index.html`. Esta função analisa se o domínio hospeda o aplicativo no ambiente do GitHub Pages e injeta dinamicamente o redirecionamento com a barra final `/` apropriada antes que o restante do pacote JavaScript quebre o caminho absoluto das origens de recursos:
+
+```html
+<script>
+  (function() {
+    var path = window.location.pathname;
+    if (window.location.hostname.endsWith('github.io') && !path.endsWith('/') && !path.split('/').pop().includes('.')) {
+      window.location.replace(window.location.href + '/');
+    }
+  })();
+</script>
+```
+
+Sempre mantenha esta configuração ativa na raiz de desenvolvimento. Ela remove a necessidade de intervenção por parte dos usuários e de redirecionamentos adicionais complexos integrados ao provedor de hospedagem de código estático.
+
+---
+**Nota Técnica:** Este manual estabelece um patamar de alta engenharia, garantindo um sistema operacional de blindagem máxima de tráfego, design imponente e integridade matemática impecável para todos os módulos (Ocorrências, Escalas, Faltas e Dispensas).
+
