@@ -43,6 +43,8 @@ const CSV_URL = G_SHEET_CSV_URL(SHEET_ID, GID);
 export const OcorrenciasDashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCPAs, setSelectedCPAs] = useState<string[]>([]);
+  const [isCPADropdownOpen, setIsCPADropdownOpen] = useState(false);
   const [selectedOPMs, setSelectedOPMs] = useState<string[]>([]);
   const [isOPMDropdownOpen, setIsOPMDropdownOpen] = useState(false);
   const [selectedLocalForMap, setSelectedLocalForMap] = useState<string | null>(null);
@@ -80,7 +82,102 @@ export const OcorrenciasDashboard: React.FC = () => {
   // Helper de normalização global para evitar inconsistências
   const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s/g, '');
 
-  // Lista de OPMs únicas coletadas dinamicamente
+  // Helper para deduzir CPA a partir de um item
+  const getItemCPA = (item: any) => {
+    const keys = Object.keys(item);
+    
+    // 1. Procurar coluna específica de CPA, comando ou intermediário
+    const cpaKey = keys.find(k => {
+      const norm = normalizeStr(k);
+      return ['cpa', 'comando', 'intermediario', 'comando de policiamento de area', 'comando de policiamento de área'].some(p => norm.includes(p)) && !norm.includes('carimbo');
+    });
+    
+    if (cpaKey && item[cpaKey]) {
+      const val = String(item[cpaKey]).trim().toUpperCase();
+      if (val && val !== '-' && val !== 'N/A') {
+        return val;
+      }
+    }
+
+    // 2. Tentar deduzir a partir da OPM/unidade
+    const opmKey = keys.find(k => {
+      const norm = normalizeStr(k);
+      return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
+    });
+    
+    if (opmKey && item[opmKey]) {
+      const opmVal = String(item[opmKey]).trim().toUpperCase();
+      const match = opmVal.match(/(\d+)/);
+      if (match) {
+        const bpmNum = parseInt(match[1], 10);
+        // Mapeamento oficial aproximado da PMERJ
+        if ([2, 3, 4, 5, 6, 19, 23, 31].includes(bpmNum)) return '1º CPA';
+        if ([9, 14, 18, 27, 40, 41].includes(bpmNum)) return '2º CPA';
+        if ([15, 20, 21, 24, 34, 39, 42].includes(bpmNum)) return '3º CPA';
+        if ([7, 12, 25, 35].includes(bpmNum)) return '4º CPA';
+        if ([10, 28, 33, 37].includes(bpmNum)) return '5º CPA';
+        if ([8, 29, 32, 36].includes(bpmNum)) return '6º CPA';
+        if ([11, 26, 30, 38].includes(bpmNum)) return '7º CPA';
+      }
+      
+      if (opmVal.includes('CPA') || opmVal.includes('C.P.A.')) {
+        return opmVal;
+      }
+    }
+    
+    return 'OUTROS';
+  };
+
+  // Lista de CPAs únicas coletadas dinamicamente
+  const allCPAs = useMemo(() => {
+    const cpas = new Set<string>();
+    data.forEach(item => {
+      const cpa = getItemCPA(item);
+      if (cpa) {
+        cpas.add(cpa);
+      }
+    });
+    return Array.from(cpas).sort((a, b) => {
+      const numA = parseInt(a.replace(/[^0-9]/g, '')) || 999;
+      const numB = parseInt(b.replace(/[^0-9]/g, '')) || 999;
+      return numA - numB;
+    });
+  }, [data]);
+
+  // Lista de OPMs filhas dependentes das CPAs selecionadas
+  const availableOPMs = useMemo(() => {
+    const opms = new Set<string>();
+    data.forEach(item => {
+      if (selectedCPAs.length > 0) {
+        const itemCPA = getItemCPA(item);
+        if (!selectedCPAs.includes(itemCPA)) {
+          return;
+        }
+      }
+      
+      const keys = Object.keys(item);
+      const opmKey = keys.find(k => {
+        const norm = normalizeStr(k);
+        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
+      });
+      if (opmKey) {
+        const val = String(item[opmKey]).trim().toUpperCase();
+        if (val && val !== '-' && val !== 'N/A' && val !== 'PCA') {
+          opms.add(val);
+        }
+      }
+    });
+    return Array.from(opms).sort();
+  }, [data, selectedCPAs]);
+
+  // Sincroniza a seleção das OPMs quando o CPA selecionado muda
+  useEffect(() => {
+    if (selectedCPAs.length > 0) {
+      setSelectedOPMs(prev => prev.filter(opm => availableOPMs.includes(opm)));
+    }
+  }, [selectedCPAs, availableOPMs]);
+
+  // Lista de todas as OPMs para referência inicial se necessário
   const allOPMs = useMemo(() => {
     const opms = new Set<string>();
     data.forEach(item => {
@@ -101,6 +198,15 @@ export const OcorrenciasDashboard: React.FC = () => {
 
   const filteredData = useMemo(() => {
     return data.filter(item => {
+      // 1. Filtrar por CPA
+      if (selectedCPAs.length > 0) {
+        const itemCPA = getItemCPA(item);
+        if (!selectedCPAs.includes(itemCPA)) {
+          return false;
+        }
+      }
+      
+      // 2. Filtrar por OPM
       if (selectedOPMs.length > 0) {
         const keys = Object.keys(item);
         const opmKey = keys.find(k => {
@@ -109,13 +215,16 @@ export const OcorrenciasDashboard: React.FC = () => {
         });
         if (opmKey) {
           const val = String(item[opmKey]).trim().toUpperCase();
-          return selectedOPMs.includes(val);
+          if (!selectedOPMs.includes(val)) {
+            return false;
+          }
+        } else {
+          return false;
         }
-        return false;
       }
       return true;
     });
-  }, [data, selectedOPMs]);
+  }, [data, selectedCPAs, selectedOPMs]);
 
   // Helper para buscar soma total de colunas por padrão
   const getSumByPattern = (pattern: string, dataSource: any[]) => {
@@ -368,74 +477,160 @@ export const OcorrenciasDashboard: React.FC = () => {
       {/* Search and Action Controls */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full">
-          <div className="relative w-full lg:w-[450px]">
-            <button
-              onClick={() => setIsOPMDropdownOpen(!isOPMDropdownOpen)}
-              className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <Filter className="w-4 h-4 text-sky-500 shrink-0" />
-                {selectedOPMs.length === 0 ? (
-                  <span className="text-slate-500 font-extrabold">Todas as OPMs Ativas</span>
-                ) : (
-                  <span className="text-sky-600 font-extrabold">
-                    {selectedOPMs.length} OPM(s) Selecionada(s)
-                  </span>
-                )}
-              </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOPMDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isOPMDropdownOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-30" 
-                  onClick={() => setIsOPMDropdownOpen(false)} 
-                />
-                <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
-                  <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
-                    <span>Selecione as OPMs</span>
-                    {selectedOPMs.length > 0 && (
-                      <button
-                        onClick={() => setSelectedOPMs([])}
-                        className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
-                      >
-                        Limpar Todas
-                      </button>
-                    )}
-                  </div>
-                  {allOPMs.map(opm => {
-                    const isSelected = selectedOPMs.includes(opm);
-                    return (
-                      <button
-                        key={opm}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedOPMs(selectedOPMs.filter(o => o !== opm));
-                          } else {
-                            setSelectedOPMs([...selectedOPMs, opm]);
-                          }
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                          isSelected 
-                            ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
-                            : 'hover:bg-slate-50 text-slate-600'
-                        }`}
-                      >
-                        <span>{opm}</span>
-                        {isSelected && <Check className="w-4 h-4 text-sky-500" />}
-                      </button>
-                    );
-                  })}
-                  {allOPMs.length === 0 && (
-                    <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhuma OPM encontrada</p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-[650px]">
+            {/* CPA Dropdown */}
+            <div className="relative flex-1">
+              <button
+                onClick={() => {
+                  setIsCPADropdownOpen(!isCPADropdownOpen);
+                  setIsOPMDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Filter className="w-4 h-4 text-sky-500 shrink-0" />
+                  {selectedCPAs.length === 0 ? (
+                    <span className="text-slate-500 font-extrabold">Todos os Comandos (CPA)</span>
+                  ) : (
+                    <span className="text-sky-600 font-extrabold">
+                      {selectedCPAs.length} CPA(s)
+                    </span>
                   )}
                 </div>
-              </>
-            )}
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isCPADropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isCPADropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setIsCPADropdownOpen(false)} 
+                  />
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                      <span>Selecione os CPAs</span>
+                      {selectedCPAs.length > 0 && (
+                        <button
+                          onClick={() => setSelectedCPAs([])}
+                          className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
+                        >
+                          Limpar Todos
+                        </button>
+                      )}
+                    </div>
+                    {allCPAs.map(cpa => {
+                      const isSelected = selectedCPAs.includes(cpa);
+                      return (
+                        <button
+                          key={cpa}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedCPAs(selectedCPAs.filter(c => c !== cpa));
+                            } else {
+                              setSelectedCPAs([...selectedCPAs, cpa]);
+                            }
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
+                            isSelected 
+                              ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
+                              : 'hover:bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <span>{cpa}</span>
+                          {isSelected && <Check className="w-4 h-4 text-sky-500" />}
+                        </button>
+                      );
+                    })}
+                    {allCPAs.length === 0 && (
+                      <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhum CPA encontrado</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* OPM Dropdown */}
+            <div className="relative flex-1">
+              <button
+                onClick={() => {
+                  setIsOPMDropdownOpen(!isOPMDropdownOpen);
+                  setIsCPADropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Filter className="w-4 h-4 text-sky-500 shrink-0" />
+                  {selectedOPMs.length === 0 ? (
+                    <span className="text-slate-500 font-extrabold">Todas as OPMs Ativas</span>
+                  ) : (
+                    <span className="text-sky-600 font-extrabold">
+                      {selectedOPMs.length} OPM(s)
+                    </span>
+                  )}
+                </div>
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOPMDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isOPMDropdownOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setIsOPMDropdownOpen(false)} 
+                  />
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                      <span>Selecione as OPMs</span>
+                      {selectedOPMs.length > 0 && (
+                        <button
+                          onClick={() => setSelectedOPMs([])}
+                          className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
+                        >
+                          Limpar Todas
+                        </button>
+                      )}
+                    </div>
+                    {availableOPMs.map(opm => {
+                      const isSelected = selectedOPMs.includes(opm);
+                      return (
+                        <button
+                          key={opm}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedOPMs(selectedOPMs.filter(o => o !== opm));
+                            } else {
+                              setSelectedOPMs([...selectedOPMs, opm]);
+                            }
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
+                            isSelected 
+                              ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
+                              : 'hover:bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <span>{opm}</span>
+                          {isSelected && <Check className="w-4 h-4 text-sky-500" />}
+                        </button>
+                      );
+                    })}
+                    {availableOPMs.length === 0 && (
+                      <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhuma OPM encontrada</p>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           
           <div className="grid grid-cols-2 lg:flex items-center gap-2 w-full lg:w-auto">
+            {(selectedCPAs.length > 0 || selectedOPMs.length > 0) && (
+              <button 
+                onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); }}
+                className="col-span-2 lg:col-span-1 flex items-center justify-center gap-2 bg-rose-50 text-rose-600 border border-rose-200/60 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-rose-100/70 transition-all shadow-sm active:scale-95"
+              >
+                <X className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-rose-500" /> 
+                Limpar Filtros
+              </button>
+            )}
             <button 
               onClick={fetchData} 
               className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
@@ -453,24 +648,51 @@ export const OcorrenciasDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Badge lists for filtered OPMs */}
-        {selectedOPMs.length > 0 && (
+        {/* Badge lists for filtered CPAs and OPMs */}
+        {(selectedCPAs.length > 0 || selectedOPMs.length > 0) && (
           <div className="flex flex-wrap gap-1.5 items-center justify-start py-1 px-1 border-t border-slate-100 pt-3">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros Ativos:</span>
+            
+            {/* CPAs Badges */}
+            {selectedCPAs.map(cpa => (
+              <span 
+                key={cpa} 
+                className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-400 uppercase tracking-wider"
+              >
+                CPA: {cpa}
+                <button 
+                  onClick={() => setSelectedCPAs(selectedCPAs.filter(c => c !== cpa))}
+                  className="hover:bg-slate-800 p-0.5 rounded-full transition-colors"
+                >
+                  <X className="w-2.5 h-2.5 text-sky-400" />
+                </button>
+              </span>
+            ))}
+
+            {/* OPMs Badges */}
             {selectedOPMs.map(opm => (
               <span 
                 key={opm} 
-                className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider"
+                className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider"
               >
-                {opm}
+                OPM: {opm}
                 <button 
                   onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))}
                   className="hover:bg-sky-200 p-0.5 rounded-full transition-colors"
                 >
-                  <X className="w-2.5 h-2.5 text-sky-600" />
+                  <X className="w-2.5 h-2.5 text-sky-700" />
                 </button>
               </span>
             ))}
+
+            {/* General dynamic clear card */}
+            <button
+              onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); }}
+              className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200/50 hover:bg-rose-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-rose-700 uppercase tracking-wider transition-all active:scale-95"
+            >
+              <X className="w-2.5 h-2.5" />
+              Limpar Todos
+            </button>
           </div>
         )}
       </div>
