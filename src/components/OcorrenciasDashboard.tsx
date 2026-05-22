@@ -573,15 +573,17 @@ export const OcorrenciasDashboard: React.FC = () => {
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-20">
               <tr className="bg-slate-900 border-b border-slate-800">
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Registro</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM / Responsável</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Carimbo</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dia/Turno</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Local</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Perfuro</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Simul.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Histórico / Dinâmica</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dinâmica</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 italic">
@@ -593,6 +595,35 @@ export const OcorrenciasDashboard: React.FC = () => {
                     return patterns.some(p => normalizedKey.includes(normalizeStr(p)));
                   });
                   return key ? String(item[key]) : '-';
+                };
+
+                const getDiaTurnoVal = () => {
+                  const combinedKey = keys.find(k => {
+                    const norm = normalizeStr(k);
+                    return norm.includes('dia') && norm.includes('turno');
+                  });
+                  if (combinedKey) {
+                    return String(item[combinedKey]);
+                  }
+                  
+                  const diaKey = keys.find(k => {
+                    const norm = normalizeStr(k);
+                    return norm.includes('dia') && !norm.includes('turno');
+                  });
+                  const turnoKey = keys.find(k => {
+                    const norm = normalizeStr(k);
+                    return norm.includes('turno') && !norm.includes('dia');
+                  });
+                  
+                  if (diaKey && turnoKey) {
+                    return `${item[diaKey]} - ${item[turnoKey]}`;
+                  } else if (diaKey) {
+                    return String(item[diaKey]);
+                  } else if (turnoKey) {
+                    return String(item[turnoKey]);
+                  }
+                  
+                  return getVal(['dia', 'turno']);
                 };
 
                 const getEmailVal = () => {
@@ -623,74 +654,30 @@ export const OcorrenciasDashboard: React.FC = () => {
                   <tr 
                     key={idx} 
                     onClick={() => setSelectedRow(item)}
-                    className="hover:bg-sky-50/50 transition-all duration-200 cursor-pointer group border-b border-slate-100"
+                    className="hover:bg-sky-50 transition-colors cursor-pointer group"
                   >
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800 uppercase text-[11px] tracking-wide">
-                        {getVal(['dia'])} - {getVal(['turno'])}
-                      </div>
-                      <div className="text-[9px] font-mono text-slate-400 mt-0.5">
-                        {getVal(['carimbo', 'data'])}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-widest">
-                        {getVal(['opm', 'pca', 'unidade'])}
-                      </div>
-                      <div className="text-[9px] text-slate-400 lowercase mt-1 block truncate max-w-[150px]">
-                        {getEmailVal()}
-                      </div>
+                    <td className="px-6 py-4 text-[11px] font-mono text-slate-400">
+                      {getVal(['carimbo', 'data'])}
                     </td>
                     <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-                      {localValue && localValue !== '-' ? (
-                        <div className="flex items-center gap-2">
-                          <span className="truncate max-w-[150px] font-mono text-slate-500" title={localValue}>
-                            {localValue}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLocalForMap(localValue);
-                            }}
-                            className="p-1.5 bg-sky-50 hover:bg-sky-600 text-sky-600 hover:text-white border border-sky-100 rounded-lg transition-all active:scale-95 flex items-center justify-center shadow-sm"
-                            title="Visualizar Mapa do Local"
-                          >
-                            <MapPin className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono">-</span>
-                      )}
+                      {getDiaTurnoVal()}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['adulto']) !== '-' && getVal(['adulto']) !== '0' ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
-                        {getVal(['adulto'])}
-                      </span>
+                    <td className="px-6 py-4 text-[11px] font-black text-slate-900 lowercase">
+                      {getEmailVal()}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['adolescente']) !== '-' && getVal(['adolescente']) !== '0' ? 'bg-amber-100/80 text-amber-800 border border-amber-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
-                        {getVal(['adolescente'])}
-                      </span>
+                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
+                      {getVal(['opm', 'pca', 'unidade'])}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['arma']) !== '-' && getVal(['arma']) !== '0' ? 'bg-rose-100/80 text-rose-800 border border-rose-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
-                        {getVal(['arma'])}
-                      </span>
+                    <td className="px-6 py-4 text-[11px] text-slate-700 font-bold uppercase">
+                      {localValue && localValue !== '-' ? localValue : <span className="text-slate-400 font-mono">-</span>}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['perfuro']) !== '-' && getVal(['perfuro']) !== '0' ? 'bg-sky-100/80 text-sky-800 border border-sky-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
-                        {getVal(['perfuro'])}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['simulacro']) !== '-' && getVal(['simulacro']) !== '0' ? 'bg-indigo-100/80 text-indigo-800 border border-indigo-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
-                        {getVal(['simulacro'])}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-[11px] text-slate-600 font-medium leading-relaxed max-w-[300px] bg-slate-50/30 overflow-hidden whitespace-normal border-l border-slate-100">
-                      <p className="line-clamp-2 group-hover:line-clamp-none transition-all duration-300" title="Clique para ver relato completo">
-                        {getVal(['dinamica', 'vulto', 'interesse', 'resumo'])}
-                      </p>
+                    <td className="px-6 py-4 text-center text-xs font-black bg-emerald-50/30 text-emerald-700">{getVal(['adulto'])}</td>
+                    <td className="px-6 py-4 text-center text-xs font-black bg-amber-50/30 text-amber-700">{getVal(['adolescente'])}</td>
+                    <td className="px-6 py-4 text-center text-xs font-black bg-rose-50/30 text-rose-700">{getVal(['arma'])}</td>
+                    <td className="px-6 py-4 text-center text-xs font-black bg-sky-50/30 text-sky-700">{getVal(['perfuro'])}</td>
+                    <td className="px-6 py-4 text-center text-xs font-black bg-indigo-50/30 text-indigo-700">{getVal(['simulacro'])}</td>
+                    <td className="px-6 py-4 text-[11px] text-slate-800 font-bold leading-relaxed min-w-[350px] bg-slate-50/50 whitespace-pre-wrap border-l border-slate-200">
+                      {getVal(['dinamica', 'vulto', 'interesse', 'resumo'])}
                     </td>
                   </tr>
                 );
@@ -699,7 +686,7 @@ export const OcorrenciasDashboard: React.FC = () => {
             {/* Table Footer with Totals */}
             <tfoot className="sticky bottom-0 bg-slate-900 font-black text-white z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <tr>
-                <td colSpan={3} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
+                <td colSpan={5} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
                   Totais Acumulados da Listagem:
                 </td>
                 <td className="px-6 py-5 text-center text-sm border-t border-slate-800 bg-slate-800">{totals.adultos}</td>
@@ -846,6 +833,17 @@ export const OcorrenciasDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Dedicated Full Address Banner */}
+              <div className="bg-slate-50 border-b border-slate-100 px-6 sm:px-8 py-4 sm:py-5 flex items-start gap-3 text-slate-700">
+                <div className="p-2 bg-sky-100 rounded-xl text-sky-700 shrink-0 mt-0.5">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div className="text-[11px] sm:text-xs tracking-wide leading-relaxed">
+                  <div className="text-slate-400 font-black text-[9px] uppercase tracking-wider mb-0.5">Endereço da Ocorrência</div>
+                  <div className="text-slate-800 font-extrabold uppercase">{selectedLocalForMap}</div>
+                </div>
+              </div>
               
               <div className="p-2 bg-slate-950 aspect-[16/10] sm:aspect-[16/9] min-h-[350px] relative">
                 <iframe 
@@ -857,10 +855,7 @@ export const OcorrenciasDashboard: React.FC = () => {
                 />
               </div>
               
-              <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex justify-between items-center gap-4">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 truncate max-w-sm">
-                  {selectedLocalForMap}
-                </span>
+              <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex justify-end">
                 <button 
                   onClick={() => setSelectedLocalForMap(null)}
                   className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
