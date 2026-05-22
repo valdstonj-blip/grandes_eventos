@@ -573,17 +573,15 @@ export const OcorrenciasDashboard: React.FC = () => {
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-20">
               <tr className="bg-slate-900 border-b border-slate-800">
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Carimbo</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dia/Turno</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Registro</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM / Responsável</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Local</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Perfuro</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Simul.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dinâmica</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Perfuro</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Simul.</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Histórico / Dinâmica</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 italic">
@@ -625,24 +623,28 @@ export const OcorrenciasDashboard: React.FC = () => {
                   <tr 
                     key={idx} 
                     onClick={() => setSelectedRow(item)}
-                    className="hover:bg-sky-50 transition-colors cursor-pointer group"
+                    className="hover:bg-sky-50/50 transition-all duration-200 cursor-pointer group border-b border-slate-100"
                   >
-                    <td className="px-6 py-4 text-[11px] font-mono text-slate-400">
-                      {getVal(['carimbo', 'data'])}
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800 uppercase text-[11px] tracking-wide">
+                        {getVal(['dia'])} - {getVal(['turno'])}
+                      </div>
+                      <div className="text-[9px] font-mono text-slate-400 mt-0.5">
+                        {getVal(['carimbo', 'data'])}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-widest">
+                        {getVal(['opm', 'pca', 'unidade'])}
+                      </div>
+                      <div className="text-[9px] text-slate-400 lowercase mt-1 block truncate max-w-[150px]">
+                        {getEmailVal()}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-                      {getVal(['dia'])} - {getVal(['turno'])}
-                    </td>
-                    <td className="px-6 py-4 text-[11px] font-black text-slate-900 lowercase">
-                      {getEmailVal()}
-                    </td>
-                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-                      {getVal(['opm', 'pca', 'unidade'])}
-                    </td>
-                    <td className="px-6 py-4 text-[11px] text-slate-700 font-bold uppercase min-w-[200px]">
                       {localValue && localValue !== '-' ? (
                         <div className="flex items-center gap-2">
-                          <span className="truncate max-w-[130px] font-mono text-slate-500" title={localValue}>
+                          <span className="truncate max-w-[150px] font-mono text-slate-500" title={localValue}>
                             {localValue}
                           </span>
                           <button
@@ -660,13 +662,35 @@ export const OcorrenciasDashboard: React.FC = () => {
                         <span className="text-slate-400 font-mono">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center text-xs font-black bg-emerald-50/30 text-emerald-700">{getVal(['adulto'])}</td>
-                    <td className="px-6 py-4 text-center text-xs font-black bg-amber-50/30 text-amber-700">{getVal(['adolescente'])}</td>
-                    <td className="px-6 py-4 text-center text-xs font-black bg-rose-50/30 text-rose-700">{getVal(['arma'])}</td>
-                    <td className="px-6 py-4 text-center text-xs font-black bg-sky-50/30 text-sky-700">{getVal(['perfuro'])}</td>
-                    <td className="px-6 py-4 text-center text-xs font-black bg-indigo-50/30 text-indigo-700">{getVal(['simulacro'])}</td>
-                    <td className="px-6 py-4 text-[11px] text-slate-800 font-bold leading-relaxed min-w-[350px] bg-slate-50/50 whitespace-pre-wrap border-l border-slate-200">
-                      {getVal(['dinamica', 'vulto', 'interesse', 'resumo'])}
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['adulto']) !== '-' && getVal(['adulto']) !== '0' ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
+                        {getVal(['adulto'])}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['adolescente']) !== '-' && getVal(['adolescente']) !== '0' ? 'bg-amber-100/80 text-amber-800 border border-amber-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
+                        {getVal(['adolescente'])}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['arma']) !== '-' && getVal(['arma']) !== '0' ? 'bg-rose-100/80 text-rose-800 border border-rose-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
+                        {getVal(['arma'])}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['perfuro']) !== '-' && getVal(['perfuro']) !== '0' ? 'bg-sky-100/80 text-sky-800 border border-sky-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
+                        {getVal(['perfuro'])}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-black min-w-[30px] text-center ${getVal(['simulacro']) !== '-' && getVal(['simulacro']) !== '0' ? 'bg-indigo-100/80 text-indigo-800 border border-indigo-200' : 'text-slate-300 font-normal bg-slate-50'}`}>
+                        {getVal(['simulacro'])}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[11px] text-slate-600 font-medium leading-relaxed max-w-[300px] bg-slate-50/30 overflow-hidden whitespace-normal border-l border-slate-100">
+                      <p className="line-clamp-2 group-hover:line-clamp-none transition-all duration-300" title="Clique para ver relato completo">
+                        {getVal(['dinamica', 'vulto', 'interesse', 'resumo'])}
+                      </p>
                     </td>
                   </tr>
                 );
@@ -675,7 +699,7 @@ export const OcorrenciasDashboard: React.FC = () => {
             {/* Table Footer with Totals */}
             <tfoot className="sticky bottom-0 bg-slate-900 font-black text-white z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <tr>
-                <td colSpan={5} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
+                <td colSpan={3} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
                   Totais Acumulados da Listagem:
                 </td>
                 <td className="px-6 py-5 text-center text-sm border-t border-slate-800 bg-slate-800">{totals.adultos}</td>
@@ -700,63 +724,90 @@ export const OcorrenciasDashboard: React.FC = () => {
 
       {/* Detail Modal */}
       <AnimatePresence>
-        {selectedRow && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-left">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedRow(null)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden z-[101] border border-white/20 mt-auto sm:mt-0"
-            >
-              <div className="bg-slate-900 p-6 sm:p-8 text-white relative">
-                <div className="absolute top-0 right-0 p-4 sm:p-6">
+        {selectedRow && (() => {
+          // Extrai o local do selectedRow de forma dinâmica
+          const rowLocalValue = (() => {
+            const keys = Object.keys(selectedRow);
+            const localPatterns = ['local', 'endereco', 'rua', 'bairro', 'zona', 'onde', 'municipio', 'cidade'];
+            const excludePatterns = ['email', 'mail', 'carimbo', 'temp', 'data', 'hora'];
+            const key = keys.find(k => {
+              const norm = normalizeStr(k);
+              const hasLocalKey = localPatterns.some(p => norm.includes(p));
+              const hasExcludeKey = excludePatterns.some(p => norm.includes(p));
+              return hasLocalKey && !hasExcludeKey;
+            });
+            return key ? String(selectedRow[key]) : null;
+          })();
+
+          return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-left">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedRow(null)}
+                className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                className="relative bg-white w-full max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden z-[101] border border-white/20 mt-auto sm:mt-0"
+              >
+                <div className="bg-slate-900 p-6 sm:p-8 text-white relative">
+                  <div className="absolute top-0 right-0 p-4 sm:p-6">
+                    <button 
+                      onClick={() => setSelectedRow(null)}
+                      className="p-2 hover:bg-white/10 rounded-full transition-colors group"
+                    >
+                      <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-white transition-colors" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4 sm:gap-5">
+                    <div className="p-3 sm:p-4 bg-sky-500/20 rounded-2xl border border-sky-500/20">
+                      <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-sky-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">Detalhamento</h3>
+                      <p className="text-sky-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Dados Técnicos</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-6 sm:p-8 max-h-[50vh] overflow-y-auto custom-scrollbar bg-slate-50/50">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {Object.entries(selectedRow).map(([key, value]) => (
+                      <div key={key} className="bg-white p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm group hover:border-sky-200 transition-all duration-300">
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-sky-500 transition-colors uppercase">{key}</p>
+                        <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 break-words leading-relaxed">{String(value || 'N/A')}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3">
+                  {rowLocalValue && rowLocalValue !== '-' && (
+                    <button 
+                      onClick={() => {
+                        setSelectedLocalForMap(rowLocalValue);
+                      }}
+                      className="w-full sm:w-auto bg-sky-600 text-white px-8 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-sky-700 transition-all active:scale-95 shadow-xl shadow-sky-600/20 flex items-center justify-center gap-2"
+                    >
+                      <MapPin className="w-4 h-4 text-cyan-300" />
+                      Visualizar Mapa
+                    </button>
+                  )}
                   <button 
                     onClick={() => setSelectedRow(null)}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors group"
+                    className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
                   >
-                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-white transition-colors" />
+                    Fechar Detalhes
                   </button>
                 </div>
-                <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="p-3 sm:p-4 bg-sky-500/20 rounded-2xl border border-sky-500/20">
-                    <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-sky-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">Detalhamento</h3>
-                    <p className="text-sky-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Dados Técnicos</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6 sm:p-8 max-h-[70vh] overflow-y-auto custom-scrollbar bg-slate-50/50">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {Object.entries(selectedRow).map(([key, value]) => (
-                    <div key={key} className="bg-white p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm group hover:border-sky-200 transition-all duration-300">
-                      <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 group-hover:text-sky-500 transition-colors uppercase">{key}</p>
-                      <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 break-words leading-relaxed">{String(value || 'N/A')}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex justify-end">
-                <button 
-                  onClick={() => setSelectedRow(null)}
-                  className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
-                >
-                  Fechar Detalhes
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Map Modal */}
