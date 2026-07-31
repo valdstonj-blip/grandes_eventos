@@ -16,6 +16,8 @@ import {
   FileText,
   Shield,
   X,
+  Building2,
+  Users,
   MapPin,
   Map,
   ChevronDown,
@@ -31,14 +33,35 @@ import {
   ResponsiveContainer,
   Cell,
   PieChart,
-  Pie
+  Pie,
+  LabelList
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const SHEET_ID = '1rAz2R5WNqv4CQehdQbOD_ay9I-A-CFpJwL5NEN8OXzY';
-const GID = '1427631463';
-const CSV_URL = G_SHEET_CSV_URL(SHEET_ID, GID);
+const PUBLISHED_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyoV-aJYD3NfKQlfl_t6cEQJ3_1UlZ1CmbLTy2MyCGym8Q4yTPA7OLPVTt3m7z_R0B9w6ik0WfCvbO/pub?output=csv';
+
+const CustomBarTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-2xl text-white text-xs z-50">
+        <p className="font-black text-sky-400 mb-2 border-b border-slate-800 pb-1.5 uppercase tracking-wider">{label}</p>
+        <div className="space-y-1.5">
+          {payload.map((entry: any, index: number) => (
+            <div key={`item-${index}`} className="flex items-center justify-between gap-6 font-bold text-[11px]">
+              <span className="flex items-center gap-2" style={{ color: entry.fill || entry.color }}>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.fill || entry.color }} />
+                {entry.name}:
+              </span>
+              <span className="font-mono text-white text-sm font-black">{entry.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const OcorrenciasDashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
@@ -53,11 +76,15 @@ export const OcorrenciasDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const result = await getCSVData(CSV_URL);
-      setData(result);
-      // Salva no cache local para carregamento instantâneo no futuro
-      localStorage.setItem('cache_ocorrencias', JSON.stringify(result));
-      localStorage.setItem('cache_ocorrencias_time', new Date().toISOString());
+      localStorage.removeItem('cache_ocorrencias');
+      localStorage.removeItem('cache_ocorrencias_time');
+      const timeParam = new Date().getTime();
+      const fetchUrl = `${PUBLISHED_CSV_URL}&_t=${timeParam}`;
+      let result = await getCSVData<any>(fetchUrl);
+      if (!result || result.length === 0) {
+        result = await getCSVData<any>(PUBLISHED_CSV_URL);
+      }
+      setData(result || []);
     } catch (error) {
       console.error('Error loading occurrences:', error);
     } finally {
@@ -66,16 +93,6 @@ export const OcorrenciasDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    // Tenta carregar do cache primeiro para ser instantâneo
-    const cached = localStorage.getItem('cache_ocorrencias');
-    if (cached) {
-      try {
-        setData(JSON.parse(cached));
-        setLoading(false);
-      } catch (e) {
-        console.error("Erro ao ler cache", e);
-      }
-    }
     fetchData();
   }, []);
 
@@ -84,25 +101,34 @@ export const OcorrenciasDashboard: React.FC = () => {
 
   // Helper para deduzir CPA a partir de um item
   const getItemCPA = (item: any) => {
+    if (!item || typeof item !== 'object') return 'OUTROS';
     const keys = Object.keys(item);
     
     // 1. Procurar coluna específica de CPA, comando ou intermediário
     const cpaKey = keys.find(k => {
       const norm = normalizeStr(k);
-      return ['cpa', 'comando', 'intermediario', 'comando de policiamento de area', 'comando de policiamento de área'].some(p => norm.includes(p)) && !norm.includes('carimbo');
+      return (
+        norm.includes('cpa') || 
+        norm.includes('intermediario') || 
+        (norm.includes('comando') && !norm.includes('carimbo'))
+      );
     });
     
     if (cpaKey && item[cpaKey]) {
       const val = String(item[cpaKey]).trim().toUpperCase();
-      if (val && val !== '-' && val !== 'N/A') {
+      if (val && val !== '-' && val !== 'N/A' && val !== 'NULL') {
+        const numMatch = val.match(/(\d+)/);
+        if (numMatch) {
+          return `${numMatch[1]}º CPA`;
+        }
         return val;
       }
     }
 
-    // 2. Tentar deduzir a partir da OPM/unidade
+    // 2. Tentar deduzir a partir da OPM/unidade se CPA vier em branco
     const opmKey = keys.find(k => {
       const norm = normalizeStr(k);
-      return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
+      return ['opm', 'unidade'].some(p => norm.includes(p));
     });
     
     if (opmKey && item[opmKey]) {
@@ -110,7 +136,6 @@ export const OcorrenciasDashboard: React.FC = () => {
       const match = opmVal.match(/(\d+)/);
       if (match) {
         const bpmNum = parseInt(match[1], 10);
-        // Mapeamento oficial aproximado da PMERJ
         if ([2, 3, 4, 5, 6, 19, 23, 31].includes(bpmNum)) return '1º CPA';
         if ([9, 14, 18, 27, 40, 41].includes(bpmNum)) return '2º CPA';
         if ([15, 20, 21, 24, 34, 39, 42].includes(bpmNum)) return '3º CPA';
@@ -118,10 +143,6 @@ export const OcorrenciasDashboard: React.FC = () => {
         if ([10, 28, 33, 37].includes(bpmNum)) return '5º CPA';
         if ([8, 29, 32, 36].includes(bpmNum)) return '6º CPA';
         if ([11, 26, 30, 38].includes(bpmNum)) return '7º CPA';
-      }
-      
-      if (opmVal.includes('CPA') || opmVal.includes('C.P.A.')) {
-        return opmVal;
       }
     }
     
@@ -311,6 +332,117 @@ export const OcorrenciasDashboard: React.FC = () => {
       sums[key] = total;
     });
     return sums;
+  }, [filteredData]);
+
+  const vultoCount = useMemo(() => {
+    return filteredData.filter(item => {
+      const keys = Object.keys(item);
+      const vKey = keys.find(k => normalizeStr(k).includes('vulto'));
+      if (!vKey) return false;
+      const val = String(item[vKey] || '').toUpperCase();
+      return val.includes('SIM') || val === 'S' || val === '1';
+    }).length;
+  }, [filteredData]);
+
+  const activeOPMsCount = useMemo(() => {
+    const set = new Set<string>();
+    filteredData.forEach(item => {
+      const keys = Object.keys(item);
+      const opmKey = keys.find(k => {
+        const norm = normalizeStr(k);
+        return norm.includes('opm') || norm.includes('unidade');
+      });
+      if (opmKey && item[opmKey]) {
+        const val = String(item[opmKey]).trim().toUpperCase();
+        if (val && val !== '-' && val !== 'N/A') {
+          set.add(val);
+        }
+      }
+    });
+    return set.size;
+  }, [filteredData]);
+
+  const opmSubmissionCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    filteredData.forEach(item => {
+      const keys = Object.keys(item);
+      const k = keys.find(key => {
+        const norm = normalizeStr(key);
+        return norm.includes('opm') || norm.includes('unidade');
+      });
+      let opm = k ? String(item[k] || '').trim().toUpperCase() : 'N/A';
+      if (!opm || opm === '-') opm = 'N/A';
+      map[opm] = (map[opm] || 0) + 1;
+    });
+    return Object.entries(map)
+      .map(([opm, count]) => ({ opm, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredData]);
+
+  const getItemSumByPatterns = (patterns: string[], item: any) => {
+    const keys = Object.keys(item);
+    const technicalForbidden = ['rg', 're', 'id', 'cod', 'carimbo', 'timestamp', 'celular', 'opm', 'unidade', 'cpf', 'registro'];
+
+    const matchedKeys = keys.filter(k => {
+      const normKey = normalizeStr(k);
+      const hasPattern = patterns.some(p => normKey.includes(normalizeStr(p)));
+      const isTechnicalId = technicalForbidden.some(f => normKey === f || (normKey.startsWith(f) && !['qtd', 'arma', 'adulto', 'adolescente', 'perfuro', 'simulacro'].some(q => normKey.includes(q))));
+      return hasPattern && !isTechnicalId;
+    });
+
+    let sum = 0;
+    matchedKeys.forEach(key => {
+      const rawValue = String(item[key] || '').trim().toUpperCase();
+      if (!rawValue || ['0', '-', 'NAO', 'NÃO', 'NEGATIVO', 'Ñ'].includes(rawValue)) return;
+
+      const cleanVal = rawValue.replace(/[^0-9]/g, '');
+      const numVal = parseInt(cleanVal);
+      
+      if (!isNaN(numVal) && cleanVal.length > 0) {
+        if (numVal > 0 && numVal < 1000) {
+          sum += numVal;
+        }
+      } else if (['X', 'SIM', 'S', '1', 'OK'].includes(rawValue)) {
+        sum += 1;
+      }
+    });
+
+    return sum;
+  };
+
+  const opmBarData = useMemo(() => {
+    const map: Record<string, { opm: string; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; total: number }> = {};
+
+    filteredData.forEach(item => {
+      const keys = Object.keys(item);
+      const opmKey = keys.find(k => {
+        const norm = normalizeStr(k);
+        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
+      });
+
+      let opm = opmKey ? String(item[opmKey] || '').trim().toUpperCase() : 'N/A';
+      if (!opm || opm === '-') opm = 'N/A';
+
+      const adultos = getItemSumByPatterns(['adulto'], item);
+      const adolescentes = getItemSumByPatterns(['adolescente'], item);
+      const armas = getItemSumByPatterns(['arma'], item);
+      const perfuro = getItemSumByPatterns(['perfuro'], item);
+      const simulacros = getItemSumByPatterns(['simulacro'], item);
+
+      if (!map[opm]) {
+        map[opm] = { opm, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, total: 0 };
+      }
+
+      map[opm].adultos += adultos;
+      map[opm].adolescentes += adolescentes;
+      map[opm].armas += armas;
+      map[opm].perfuro += perfuro;
+      map[opm].simulacros += simulacros;
+      map[opm].total += (adultos + adolescentes + armas + perfuro + simulacros);
+    });
+
+    return Object.values(map)
+      .sort((a, b) => b.total - a.total || a.opm.localeCompare(b.opm));
   }, [filteredData]);
 
   const pieDataArray = useMemo(() => {
@@ -697,43 +829,123 @@ export const OcorrenciasDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-sky-50 rounded-full -mr-16 -mt-16 lg:-mr-24 lg:-mt-24 group-hover:scale-110 transition-transform duration-500" />
-          <p className="text-[9px] lg:text-[10px] font-black text-sky-600 uppercase tracking-widest mb-1 relative z-10">Volume de Envios de Formulários</p>
-          <div className="flex items-end gap-3 relative z-10">
-            <p className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter">{totals.envio}</p>
-            <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 mb-1 lg:mb-2 uppercase italic tracking-tighter">Registros</p>
-          </div>
-          <div className="mt-6 flex items-center gap-2 relative z-10">
-            <div className="h-1.5 lg:h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-sky-500 animate-pulse" style={{ width: '100%' }} />
+      {/* Redesigned Summary Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Volume de Envios com separação por OPM */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-black text-sky-600 uppercase tracking-wider">Volume de Formulários</span>
+            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl border border-sky-100">
+              <FileText className="w-4 h-4" />
             </div>
-            <span className="text-[9px] lg:text-[10px] font-black text-sky-600 uppercase tracking-tighter">Planilha Live</span>
+          </div>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">{totals.envio}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Registros Total</span>
+          </div>
+          <div className="space-y-1 my-1 max-h-[85px] overflow-y-auto pr-0.5">
+            {opmSubmissionCounts.length === 0 ? (
+              <p className="text-[10px] text-slate-400 font-bold uppercase">Sem registros</p>
+            ) : (
+              opmSubmissionCounts.map(item => (
+                <div key={item.opm} className="flex justify-between items-center text-[10px] font-extrabold text-slate-800 bg-slate-50 px-2 py-1 rounded-lg border border-slate-150">
+                  <span className="text-sky-800 font-black uppercase">{item.opm}:</span>
+                  <span className="font-mono text-slate-900 font-black">{item.count} envio(s)</span>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px] font-black text-slate-500 uppercase">
+            <span>Envios por OPM</span>
+            <span className="text-emerald-600 font-extrabold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live OK
+            </span>
           </div>
         </motion.div>
 
-        <div className="bg-slate-900 p-6 lg:p-8 rounded-3xl text-white flex flex-col justify-between shadow-xl overflow-hidden relative border-b-4 border-b-sky-600">
-          <div className="absolute top-0 right-0 opacity-10">
-             <Shield className="w-32 h-32 lg:w-40 lg:h-40 -mr-8 -mt-8 lg:-mr-10 lg:-mt-10" />
-          </div>
-          <div className="relative z-10 flex flex-col h-full justify-center">
-            <h3 className="text-lg lg:text-2xl font-black uppercase italic tracking-tight mb-2 flex items-center gap-2">
-              <Activity className="w-5 h-5 lg:w-6 lg:h-6 text-sky-400" /> Monitoramento PM/3
-            </h3>
-            <p className="text-slate-400 text-[10px] lg:text-xs font-bold uppercase tracking-[0.2em] leading-relaxed max-w-md">
-              Controle técnico operacional de ocorrências e registros em tempo real.
-            </p>
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/80">Monitoramento Ativo</span>
+        {/* Card 2: Detenções de Pessoas (Adultos e Adolescentes) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Detenções de Pessoas</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-        </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">
+              {totals.adultos + totals.adolescentes}
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Detidos Total</span>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] font-black uppercase text-slate-600">
+            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-extrabold">
+              Adultos: {totals.adultos}
+            </span>
+            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 font-extrabold">
+              Adolesc: {totals.adolescentes}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Card 3: Apreensão de Materiais (Armas, Perfuro, Simulacros) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">Apreensão de Armas & Materiais</span>
+            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
+              <Shield className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-black text-slate-900 tracking-tight">
+              {totals.armas + totals.perfuro + totals.simulacros}
+            </span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase">Itens Apreendidos</span>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[8.5px] font-black uppercase text-slate-600 flex-wrap">
+            <span className="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 font-extrabold">
+              Armas: {totals.armas}
+            </span>
+            <span className="text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 font-extrabold">
+              Perfuro: {totals.perfuro}
+            </span>
+            <span className="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 font-extrabold">
+              Simul: {totals.simulacros}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Card 4: Qualificação por OPM (Apenas Presos e Armas) */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">Qualificação por OPM</span>
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+              <Building2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="space-y-1.5 my-1 max-h-[85px] overflow-y-auto pr-0.5">
+            {opmBarData.length === 0 ? (
+              <p className="text-[10px] text-slate-400 font-bold uppercase py-2">Sem dados</p>
+            ) : (
+              opmBarData.map(o => (
+                <div key={o.opm} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 text-[10px] font-extrabold text-slate-800">
+                  <span className="text-sky-800 font-black uppercase">{o.opm}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-900 rounded text-[9px] font-black">
+                      {o.adultos + o.adolescentes} Presos
+                    </span>
+                    <span className="px-1.5 py-0.5 bg-rose-100 text-rose-900 rounded text-[9px] font-black">
+                      {o.armas + o.perfuro + o.simulacros} Armas
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px] font-black text-slate-500 uppercase">
+            <span>Presos e Armas por OPM</span>
+            <span className="text-indigo-600 font-extrabold">{opmBarData.length} OPM(s)</span>
+          </div>
+        </motion.div>
       </div>
 
       {/* Quantitative Charts Section */}
@@ -773,6 +985,103 @@ export const OcorrenciasDashboard: React.FC = () => {
         </div>
       </section>
 
+      {/* OPM Bar Chart Section (before Detailed Records Table) */}
+      <section className="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-slate-900 rounded-2xl text-sky-400 shadow-md">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+                Quantitativo Operacional por OPM
+              </h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Adultos Presos, Adolescentes, Armas, Perfurocortantes e Simulacros
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase">
+            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos
+            </span>
+            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adol.
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas
+            </span>
+            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-sky-500 inline-block" /> Perfuro
+            </span>
+            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
+            </span>
+          </div>
+        </div>
+
+        {opmBarData.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+            Nenhum dado encontrado para os filtros selecionados.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="h-[380px] w-full pt-2">
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={opmBarData} margin={{ top: 25, right: 10, left: -20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="opm" 
+                    tick={{ fontSize: 10, fontWeight: '800', fill: '#475569' }} 
+                    interval={0} 
+                    angle={-30} 
+                    textAnchor="end" 
+                    height={70} 
+                  />
+                  <YAxis tick={{ fontSize: 10, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip content={<CustomBarTooltip />} />
+                  <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                    <LabelList dataKey="adultos" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#059669' }} />
+                  </Bar>
+                  <Bar dataKey="adolescentes" name="Adolescentes Apreendidos" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                    <LabelList dataKey="adolescentes" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#d97706' }} />
+                  </Bar>
+                  <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                    <LabelList dataKey="armas" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#e11d48' }} />
+                  </Bar>
+                  <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                    <LabelList dataKey="perfuro" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#0284c7' }} />
+                  </Bar>
+                  <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                    <LabelList dataKey="simulacros" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#4f46e5' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Quick Numeric Summary per OPM */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-4 border-t border-slate-100">
+              {opmBarData.map(o => (
+                <div key={o.opm} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm hover:border-sky-300 transition-all">
+                  <div className="font-black text-slate-900 text-xs uppercase mb-1 flex justify-between items-center">
+                    <span>{o.opm}</span>
+                    <span className="text-[9px] font-mono text-slate-400">{o.total} total</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 text-[9px] font-bold">
+                    {o.adultos > 0 && <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">{o.adultos} Presos</span>}
+                    {o.adolescentes > 0 && <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">{o.adolescentes} Adol.</span>}
+                    {o.armas > 0 && <span className="bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">{o.armas} Armas</span>}
+                    {o.perfuro > 0 && <span className="bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded">{o.perfuro} Perfuro</span>}
+                    {o.simulacros > 0 && <span className="bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded">{o.simulacros} Simul.</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Main Data Table */}
       <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-2xl">
         <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
@@ -797,9 +1106,12 @@ export const OcorrenciasDashboard: React.FC = () => {
               <tr className="bg-slate-900 border-b border-slate-800">
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Carimbo</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dia/Turno</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Policial / Agente</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Comando (CPA)</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Local</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-900 border-b border-slate-800">Vulto?</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
@@ -848,6 +1160,28 @@ export const OcorrenciasDashboard: React.FC = () => {
                   return getVal(['dia', 'turno']);
                 };
 
+                const getPolicialVal = () => {
+                  const posto = getVal(['posto', 'graduac']);
+                  const nome = getVal(['guerra', 'nome']);
+                  const rg = getVal(['rg']);
+                  
+                  const parts = [];
+                  if (posto && posto !== '-') parts.push(posto);
+                  if (nome && nome !== '-') parts.push(nome);
+                  if (rg && rg !== '-') parts.push(`(RG: ${rg})`);
+                  
+                  return parts.length > 0 ? parts.join(' ') : '-';
+                };
+
+                const getOPMComandoVal = () => {
+                  const opm = getVal(['opm', 'unidade']);
+                  const comando = getVal(['comando', 'intermediario', 'cpa']);
+                  if (opm !== '-' && comando !== '-' && opm !== comando) {
+                    return `${opm} (${comando})`;
+                  }
+                  return opm !== '-' ? opm : (comando !== '-' ? comando : '-');
+                };
+
                 const getEmailVal = () => {
                   const emailPatterns = ['email', 'mail'];
                   const key = keys.find(k => {
@@ -871,6 +1205,7 @@ export const OcorrenciasDashboard: React.FC = () => {
                 };
 
                 const localValue = getLocalVal();
+                const vultoVal = getVal(['vulto', 'houve']).toUpperCase();
 
                 return (
                   <tr 
@@ -884,22 +1219,41 @@ export const OcorrenciasDashboard: React.FC = () => {
                     <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
                       {getDiaTurnoVal()}
                     </td>
-                    <td className="px-6 py-4 text-[11px] font-black text-slate-900 lowercase">
-                      {getEmailVal()}
+                    <td className="px-6 py-4 text-[11px] font-black text-slate-800 uppercase">
+                      {getPolicialVal()}
                     </td>
-                    <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-                      {getVal(['opm', 'pca', 'unidade'])}
+                    <td className="px-6 py-4 text-[11px] font-black text-sky-800 uppercase">
+                      <span className="inline-block px-2.5 py-1 bg-sky-100 text-sky-900 rounded-lg text-[10px] font-black tracking-wide border border-sky-300 shadow-sm">
+                        {getItemCPA(item)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[11px] font-extrabold text-slate-800 uppercase">
+                      {getVal(['opm', 'unidade'])}
+                    </td>
+                    <td className="px-6 py-4 text-[11px] font-semibold text-slate-600 lowercase">
+                      {getEmailVal()}
                     </td>
                     <td className="px-6 py-4 text-[11px] text-slate-700 font-bold uppercase">
                       {localValue && localValue !== '-' ? localValue : <span className="text-slate-400 font-mono">-</span>}
+                    </td>
+                    <td className="px-6 py-4 text-center text-xs font-black">
+                      {vultoVal.includes('SIM') ? (
+                        <span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-[10px] font-extrabold uppercase tracking-wider border border-rose-200">
+                          SIM
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                          {vultoVal !== '-' ? vultoVal : 'NÃO'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-emerald-50/30 text-emerald-700">{getVal(['adulto'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-amber-50/30 text-amber-700">{getVal(['adolescente'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-rose-50/30 text-rose-700">{getVal(['arma'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-sky-50/30 text-sky-700">{getVal(['perfuro'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-indigo-50/30 text-indigo-700">{getVal(['simulacro'])}</td>
-                    <td className="px-6 py-4 text-[11px] text-slate-800 font-bold leading-relaxed min-w-[350px] bg-slate-50/50 whitespace-pre-wrap border-l border-slate-200">
-                      {getVal(['dinamica', 'vulto', 'interesse', 'resumo'])}
+                    <td className="px-6 py-4 text-[11px] text-slate-800 font-bold leading-relaxed min-w-[300px] bg-slate-50/50 whitespace-pre-wrap border-l border-slate-200">
+                      {getVal(['dinamica', 'vulto', 'interesse', 'resumo', 'local'])}
                     </td>
                   </tr>
                 );
@@ -908,7 +1262,7 @@ export const OcorrenciasDashboard: React.FC = () => {
             {/* Table Footer with Totals */}
             <tfoot className="sticky bottom-0 bg-slate-900 font-black text-white z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <tr>
-                <td colSpan={5} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
+                <td colSpan={8} className="px-6 py-5 text-xs uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
                   Totais Acumulados da Listagem:
                 </td>
                 <td className="px-6 py-5 text-center text-sm border-t border-slate-800 bg-slate-800">{totals.adultos}</td>
@@ -995,17 +1349,6 @@ export const OcorrenciasDashboard: React.FC = () => {
                 </div>
                 
                 <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3">
-                  {rowLocalValue && rowLocalValue !== '-' && (
-                    <button 
-                      onClick={() => {
-                        setSelectedLocalForMap(rowLocalValue);
-                      }}
-                      className="w-full sm:w-auto bg-sky-600 text-white px-8 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-sky-700 transition-all active:scale-95 shadow-xl shadow-sky-600/20 flex items-center justify-center gap-2"
-                    >
-                      <MapPin className="w-4 h-4 text-cyan-300" />
-                      Visualizar Mapa
-                    </button>
-                  )}
                   <button 
                     onClick={() => setSelectedRow(null)}
                     className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
@@ -1017,77 +1360,6 @@ export const OcorrenciasDashboard: React.FC = () => {
             </div>
           );
         })()}
-      </AnimatePresence>
-
-      {/* Map Modal */}
-      <AnimatePresence>
-        {selectedLocalForMap && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-left">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedLocalForMap(null)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative bg-white w-full max-w-4xl rounded-t-[2rem] sm:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden z-[101] border border-white/20 mt-auto sm:mt-0"
-            >
-              <div className="bg-slate-900 p-6 sm:p-8 text-white relative">
-                <div className="absolute top-0 right-0 p-4 sm:p-6">
-                  <button 
-                    onClick={() => setSelectedLocalForMap(null)}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors group"
-                  >
-                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 group-hover:text-white transition-colors" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="p-3 sm:p-4 bg-sky-500/20 rounded-2xl border border-sky-500/20">
-                    <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-sky-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">Mapa Operacional</h3>
-                    <p className="text-sky-400 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Localizador PM/3</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Dedicated Full Address Banner */}
-              <div className="bg-slate-50 border-b border-slate-100 px-6 sm:px-8 py-4 sm:py-5 flex items-start gap-3 text-slate-700">
-                <div className="p-2 bg-sky-100 rounded-xl text-sky-700 shrink-0 mt-0.5">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div className="text-[11px] sm:text-xs tracking-wide leading-relaxed">
-                  <div className="text-slate-400 font-black text-[9px] uppercase tracking-wider mb-0.5">Endereço da Ocorrência</div>
-                  <div className="text-slate-800 font-extrabold uppercase">{selectedLocalForMap}</div>
-                </div>
-              </div>
-              
-              <div className="p-2 bg-slate-950 aspect-[16/10] sm:aspect-[16/9] min-h-[350px] relative">
-                <iframe 
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedLocalForMap)}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-                  className="w-full h-full rounded-2xl border-0 shadow-inner"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
-              
-              <div className="p-6 sm:p-8 bg-white border-t border-slate-100 flex justify-end">
-                <button 
-                  onClick={() => setSelectedLocalForMap(null)}
-                  className="w-full sm:w-auto bg-slate-900 text-white px-10 py-4 rounded-xl sm:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
-                >
-                  Fechar Mapa
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
       </AnimatePresence>
     </div>
   );

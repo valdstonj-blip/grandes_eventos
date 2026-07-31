@@ -3,22 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { OcorrenciasDashboard } from './components/OcorrenciasDashboard';
-import { FaltasDispensasDashboard } from './components/FaltasDispensasDashboard';
-import { DashboardTab } from './types';
+import { Login, UserSession } from './components/Login';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<DashboardTab>('ocorrencias');
+  const [session, setSession] = useState<UserSession | null>(() => {
+    const saved = localStorage.getItem('pm3_user_session');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const handleLogin = (userSession: UserSession) => {
+    setSession(userSession);
+    localStorage.setItem('pm3_user_session', JSON.stringify(userSession));
+  };
+
+  const handleLogout = () => {
+    setSession(null);
+    localStorage.removeItem('pm3_user_session');
+  };
+
+  if (!session) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {activeTab === 'ocorrencias' ? (
-        <OcorrenciasDashboard />
-      ) : (
-        <FaltasDispensasDashboard />
-      )}
+    <Layout activeTab="ocorrencias" setActiveTab={() => {}} session={session} onLogout={handleLogout}>
+      <OcorrenciasDashboard />
     </Layout>
   );
 }
+

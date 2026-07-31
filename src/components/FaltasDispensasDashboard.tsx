@@ -30,7 +30,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const SHEET_ID = '1xx9LLSI1R71LhhPtmiqpbnl0Ofdn3BAyLhEhamF1-No';
+const SHEET_ID = '1k2sYcmo4HzJPo-VJAvs6f8k-smH-djinRAAq-fF5BM8';
 const GID = '63164403';
 const CSV_URL = G_SHEET_CSV_URL(SHEET_ID, GID);
 
@@ -681,7 +681,7 @@ export const FaltasDispensasDashboard: React.FC = () => {
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 lg:gap-6">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-sky-50 rounded-full -mr-16 -mt-16 lg:-mr-24 lg:-mt-24 group-hover:scale-110 transition-transform duration-500" />
           <p className="text-[9px] lg:text-[10px] font-black text-sky-600 uppercase tracking-widest mb-1 relative z-10">Volume de Envios de Formulários</p>
@@ -700,27 +700,6 @@ export const FaltasDispensasDashboard: React.FC = () => {
              </div>
           </div>
         </motion.div>
-
-        <div className="bg-slate-900 p-6 lg:p-8 rounded-3xl text-white flex flex-col justify-between shadow-xl overflow-hidden relative border-b-4 border-b-emerald-600">
-          <div className="absolute top-0 right-0 opacity-10">
-             <Shield className="w-32 h-32 lg:w-40 lg:h-40 -mr-8 -mt-8 lg:-mr-10 lg:-mt-10" />
-          </div>
-          <div className="relative z-10 flex flex-col h-full justify-center">
-            <h3 className="text-lg lg:text-2xl font-black uppercase italic tracking-tight mb-2 flex items-center gap-2">
-               <Activity className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-400" /> Monitoramento
-            </h3>
-            <p className="text-slate-400 text-[10px] lg:text-xs font-bold uppercase tracking-[0.2em] leading-relaxed max-w-md">
-              Controle de faltas e dispensas.
-            </p>
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/80">Sincronizado</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
