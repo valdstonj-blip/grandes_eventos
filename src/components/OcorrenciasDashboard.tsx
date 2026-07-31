@@ -103,6 +103,57 @@ export const OcorrenciasDashboard: React.FC = () => {
   // Helper de normalização global para evitar inconsistências
   const normalizeStr = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s/g, '');
 
+  // Helper para normalizar o nome da OPM (ex: "18 BPM", "18º BPM", "18.ª BPM", "31 BPM" -> "18º BPM")
+  const normalizeOPM = (raw: any): string => {
+    if (!raw) return 'N/A';
+    let val = String(raw).trim().toUpperCase();
+    if (!val || val === '-' || val === 'N/A' || val === 'NULL' || val === 'PCA' || val === '0') return 'N/A';
+
+    // Captura números associados a BPM (ex: "18 BPM", "18º BPM", "18.ª BPM", "18BPM", "BPM 18")
+    const bpmMatch = val.match(/(\d+)\s*[\.ºª°]*\s*BPM/i) || val.match(/BPM\s*[\.ºª°]*\s*(\d+)/i);
+    if (bpmMatch) {
+      return `${bpmMatch[1]}º BPM`;
+    }
+
+    // Número puro isolado na coluna OPM (ex: "18", "31")
+    const pureNumMatch = val.match(/^(\d+)(?:[\.ºª°]*)$/);
+    if (pureNumMatch) {
+      return `${pureNumMatch[1]}º BPM`;
+    }
+
+    // Limpeza geral de espaços duplos
+    val = val.replace(/\s+/g, ' ').replace(/\.º/g, 'º').replace(/\.ª/g, 'ª');
+    return val;
+  };
+
+  // Helper centralizado para extrair e padronizar a OPM de qualquer registro
+  const getItemOPM = (item: any): string => {
+    if (!item || typeof item !== 'object') return 'N/A';
+    const keys = Object.keys(item);
+    const forbidden = ['rg', 're', 'id', 'cpf', 'nome', 'email', 'carimbo', 'timestamp', 'cpa', 'intermediario'];
+
+    // 1. Chave prioritária contendo opm ou unidade
+    let opmKey = keys.find(k => {
+      const norm = normalizeStr(k);
+      const isForbidden = forbidden.some(f => norm.includes(f));
+      return !isForbidden && (norm === 'opm' || norm.startsWith('opm') || norm === 'unidade');
+    });
+
+    // 2. Fallback para chaves contendo opm, unidade ou pca
+    if (!opmKey) {
+      opmKey = keys.find(k => {
+        const norm = normalizeStr(k);
+        const isForbidden = forbidden.some(f => norm.includes(f));
+        return !isForbidden && ['opm', 'unidade', 'pca'].some(p => norm.includes(p));
+      });
+    }
+
+    if (opmKey && item[opmKey] !== undefined && item[opmKey] !== null) {
+      return normalizeOPM(item[opmKey]);
+    }
+    return 'N/A';
+  };
+
   // Helper para deduzir CPA a partir de um item
   const getItemCPA = (item: any) => {
     if (!item || typeof item !== 'object') return 'OUTROS';
@@ -130,13 +181,8 @@ export const OcorrenciasDashboard: React.FC = () => {
     }
 
     // 2. Tentar deduzir a partir da OPM/unidade se CPA vier em branco
-    const opmKey = keys.find(k => {
-      const norm = normalizeStr(k);
-      return ['opm', 'unidade'].some(p => norm.includes(p));
-    });
-    
-    if (opmKey && item[opmKey]) {
-      const opmVal = String(item[opmKey]).trim().toUpperCase();
+    const opmVal = getItemOPM(item);
+    if (opmVal && opmVal !== 'N/A') {
       const match = opmVal.match(/(\d+)/);
       if (match) {
         const bpmNum = parseInt(match[1], 10);
@@ -180,19 +226,16 @@ export const OcorrenciasDashboard: React.FC = () => {
         }
       }
       
-      const keys = Object.keys(item);
-      const opmKey = keys.find(k => {
-        const norm = normalizeStr(k);
-        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-      });
-      if (opmKey) {
-        const val = String(item[opmKey]).trim().toUpperCase();
-        if (val && val !== '-' && val !== 'N/A' && val !== 'PCA') {
-          opms.add(val);
-        }
+      const opm = getItemOPM(item);
+      if (opm && opm !== 'N/A') {
+        opms.add(opm);
       }
     });
-    return Array.from(opms).sort();
+    return Array.from(opms).sort((a, b) => {
+      const numA = parseInt(a.replace(/[^0-9]/g, '')) || 999;
+      const numB = parseInt(b.replace(/[^0-9]/g, '')) || 999;
+      return numA - numB || a.localeCompare(b);
+    });
   }, [data, selectedCPAs]);
 
   // Sincroniza a seleção das OPMs quando o CPA selecionado muda
@@ -279,19 +322,16 @@ export const OcorrenciasDashboard: React.FC = () => {
   const allOPMs = useMemo(() => {
     const opms = new Set<string>();
     data.forEach(item => {
-      const keys = Object.keys(item);
-      const opmKey = keys.find(k => {
-        const norm = normalizeStr(k);
-        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-      });
-      if (opmKey) {
-        const val = String(item[opmKey]).trim().toUpperCase();
-        if (val && val !== '-' && val !== 'N/A' && val !== 'PCA') {
-          opms.add(val);
-        }
+      const opm = getItemOPM(item);
+      if (opm && opm !== 'N/A') {
+        opms.add(opm);
       }
     });
-    return Array.from(opms).sort();
+    return Array.from(opms).sort((a, b) => {
+      const numA = parseInt(a.replace(/[^0-9]/g, '')) || 999;
+      const numB = parseInt(b.replace(/[^0-9]/g, '')) || 999;
+      return numA - numB || a.localeCompare(b);
+    });
   }, [data]);
 
   const filteredData = useMemo(() => {
@@ -306,17 +346,8 @@ export const OcorrenciasDashboard: React.FC = () => {
       
       // 2. Filtrar por OPM
       if (selectedOPMs.length > 0) {
-        const keys = Object.keys(item);
-        const opmKey = keys.find(k => {
-          const norm = normalizeStr(k);
-          return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-        });
-        if (opmKey) {
-          const val = String(item[opmKey]).trim().toUpperCase();
-          if (!selectedOPMs.includes(val)) {
-            return false;
-          }
-        } else {
+        const itemOPM = getItemOPM(item);
+        if (!selectedOPMs.includes(itemOPM)) {
           return false;
         }
       }
@@ -433,16 +464,9 @@ export const OcorrenciasDashboard: React.FC = () => {
   const activeOPMsCount = useMemo(() => {
     const set = new Set<string>();
     filteredData.forEach(item => {
-      const keys = Object.keys(item);
-      const opmKey = keys.find(k => {
-        const norm = normalizeStr(k);
-        return norm.includes('opm') || norm.includes('unidade');
-      });
-      if (opmKey && item[opmKey]) {
-        const val = String(item[opmKey]).trim().toUpperCase();
-        if (val && val !== '-' && val !== 'N/A') {
-          set.add(val);
-        }
+      const opm = getItemOPM(item);
+      if (opm && opm !== 'N/A') {
+        set.add(opm);
       }
     });
     return set.size;
@@ -451,18 +475,14 @@ export const OcorrenciasDashboard: React.FC = () => {
   const opmSubmissionCounts = useMemo(() => {
     const map: Record<string, number> = {};
     filteredData.forEach(item => {
-      const keys = Object.keys(item);
-      const k = keys.find(key => {
-        const norm = normalizeStr(key);
-        return norm.includes('opm') || norm.includes('unidade');
-      });
-      let opm = k ? String(item[k] || '').trim().toUpperCase() : 'N/A';
-      if (!opm || opm === '-') opm = 'N/A';
-      map[opm] = (map[opm] || 0) + 1;
+      const opm = getItemOPM(item);
+      if (opm && opm !== 'N/A') {
+        map[opm] = (map[opm] || 0) + 1;
+      }
     });
     return Object.entries(map)
       .map(([opm, count]) => ({ opm, count }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => b.count - a.count || a.opm.localeCompare(b.opm));
   }, [filteredData]);
 
   const getItemSumByPatterns = (patterns: string[], item: any) => {
@@ -500,14 +520,8 @@ export const OcorrenciasDashboard: React.FC = () => {
     const map: Record<string, { opm: string; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; total: number }> = {};
 
     filteredData.forEach(item => {
-      const keys = Object.keys(item);
-      const opmKey = keys.find(k => {
-        const norm = normalizeStr(k);
-        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
-      });
-
-      let opm = opmKey ? String(item[opmKey] || '').trim().toUpperCase() : 'N/A';
-      if (!opm || opm === '-') opm = 'N/A';
+      const opm = getItemOPM(item);
+      if (!opm || opm === 'N/A') return;
 
       const adultos = getItemSumByPatterns(['adulto'], item);
       const adolescentes = getItemSumByPatterns(['adolescente'], item);
@@ -630,8 +644,8 @@ export const OcorrenciasDashboard: React.FC = () => {
     };
 
     filteredData.forEach(item => {
-      let opmName = getValFromItem(item, ['opm', 'pca', 'unidade']) || 'N/A';
-      opmName = opmName.toUpperCase();
+      const opmName = getItemOPM(item);
+      if (opmName === 'N/A') return;
       
       if (!opmMap[opmName]) {
         opmMap[opmName] = { envios: 0, adultos: 0, adol: 0, armas: 0, perf: 0, simul: 0 };
@@ -1533,7 +1547,7 @@ export const OcorrenciasDashboard: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[11px] font-extrabold text-slate-800 uppercase">
-                      {getVal(['opm', 'unidade'])}
+                      {getItemOPM(item)}
                     </td>
                     <td className="px-6 py-4 text-[11px] font-semibold text-slate-600 lowercase">
                       {getEmailVal()}
