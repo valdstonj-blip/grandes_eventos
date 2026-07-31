@@ -21,7 +21,9 @@ import {
   MapPin,
   Map,
   ChevronDown,
-  Check
+  Check,
+  Clock,
+  Calendar
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -70,6 +72,8 @@ export const OcorrenciasDashboard: React.FC = () => {
   const [isCPADropdownOpen, setIsCPADropdownOpen] = useState(false);
   const [selectedOPMs, setSelectedOPMs] = useState<string[]>([]);
   const [isOPMDropdownOpen, setIsOPMDropdownOpen] = useState(false);
+  const [selectedTurnos, setSelectedTurnos] = useState<string[]>([]);
+  const [isTurnoDropdownOpen, setIsTurnoDropdownOpen] = useState(false);
   const [selectedLocalForMap, setSelectedLocalForMap] = useState<string | null>(null);
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
 
@@ -198,6 +202,79 @@ export const OcorrenciasDashboard: React.FC = () => {
     }
   }, [selectedCPAs, availableOPMs]);
 
+  // Helper para extrair o Turno de um item
+  const getItemTurno = (item: any) => {
+    if (!item || typeof item !== 'object') return 'NÃO INFORMADO';
+    const keys = Object.keys(item);
+    const key = keys.find(k => {
+      const norm = normalizeStr(k);
+      return norm.includes('turno');
+    });
+    if (key && item[key]) {
+      const val = String(item[key]).trim().toUpperCase();
+      if (val && val !== '-' && val !== 'N/A' && val !== 'NULL') return val;
+    }
+    const timeKey = keys.find(k => {
+      const norm = normalizeStr(k);
+      return norm.includes('carimbo') || norm.includes('timestamp') || norm.includes('hora');
+    });
+    if (timeKey && item[timeKey]) {
+      const raw = String(item[timeKey]);
+      const match = raw.match(/(\d{1,2}):\d{2}/);
+      if (match) {
+        const hour = parseInt(match[1], 10);
+        if (hour >= 6 && hour < 12) return 'MANHÃ (06h-12h)';
+        if (hour >= 12 && hour < 18) return 'TARDE (12h-18h)';
+        if (hour >= 18 && hour < 24) return 'NOITE (18h-24h)';
+        return 'MADRUGADA (00h-06h)';
+      }
+    }
+    return 'NÃO INFORMADO';
+  };
+
+  // Helper para extrair Dia/Data de um item
+  const getItemDia = (item: any) => {
+    if (!item || typeof item !== 'object') return 'OUTROS';
+    const keys = Object.keys(item);
+    const key = keys.find(k => {
+      const norm = normalizeStr(k);
+      return (norm.includes('dia') || norm.includes('data')) && !norm.includes('carimbo') && !norm.includes('timestamp');
+    });
+    if (key && item[key]) {
+      const val = String(item[key]).trim().toUpperCase();
+      if (val && val !== '-' && val !== 'N/A' && val !== 'NULL') return val;
+    }
+    const timeKey = keys.find(k => {
+      const norm = normalizeStr(k);
+      return norm.includes('carimbo') || norm.includes('timestamp') || norm.includes('data');
+    });
+    if (timeKey && item[timeKey]) {
+      const raw = String(item[timeKey]);
+      const match = raw.match(/(\d{1,2}[\/\.-]\d{1,2}(?:[\/\.-]\d{2,4})?)/);
+      if (match) return match[1];
+    }
+    return 'OUTROS';
+  };
+
+  // Listas para os seletores
+  const allTurnos = useMemo(() => {
+    const turnos = new Set<string>();
+    data.forEach(item => {
+      const t = getItemTurno(item);
+      if (t) turnos.add(t);
+    });
+    return Array.from(turnos).sort();
+  }, [data]);
+
+  const allDias = useMemo(() => {
+    const dias = new Set<string>();
+    data.forEach(item => {
+      const d = getItemDia(item);
+      if (d) dias.add(d);
+    });
+    return Array.from(dias).sort();
+  }, [data]);
+
   // Lista de todas as OPMs para referência inicial se necessário
   const allOPMs = useMemo(() => {
     const opms = new Set<string>();
@@ -243,9 +320,18 @@ export const OcorrenciasDashboard: React.FC = () => {
           return false;
         }
       }
+
+      // 3. Filtrar por Turno / Dia / Horário
+      if (selectedTurnos.length > 0) {
+        const itemTurno = getItemTurno(item);
+        if (!selectedTurnos.includes(itemTurno)) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [data, selectedCPAs, selectedOPMs]);
+  }, [data, selectedCPAs, selectedOPMs, selectedTurnos]);
 
   // Helper para buscar soma total de colunas por padrão
   const getSumByPattern = (pattern: string, dataSource: any[]) => {
@@ -445,6 +531,33 @@ export const OcorrenciasDashboard: React.FC = () => {
       .sort((a, b) => b.total - a.total || a.opm.localeCompare(b.opm));
   }, [filteredData]);
 
+  const turnoBarData = useMemo(() => {
+    const map: Record<string, { turno: string; envios: number; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; total: number }> = {};
+
+    filteredData.forEach(item => {
+      const turno = getItemTurno(item);
+      const adultos = getItemSumByPatterns(['adulto'], item);
+      const adolescentes = getItemSumByPatterns(['adolescente'], item);
+      const armas = getItemSumByPatterns(['arma'], item);
+      const perfuro = getItemSumByPatterns(['perfuro'], item);
+      const simulacros = getItemSumByPatterns(['simulacro'], item);
+
+      if (!map[turno]) {
+        map[turno] = { turno, envios: 0, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, total: 0 };
+      }
+
+      map[turno].envios += 1;
+      map[turno].adultos += adultos;
+      map[turno].adolescentes += adolescentes;
+      map[turno].armas += armas;
+      map[turno].perfuro += perfuro;
+      map[turno].simulacros += simulacros;
+      map[turno].total += (adultos + adolescentes + armas + perfuro + simulacros);
+    });
+
+    return Object.values(map).sort((a, b) => b.envios - a.envios);
+  }, [filteredData]);
+
   const pieDataArray = useMemo(() => {
     return [
       { label: 'Adultos Presos', val: totals.adultos, color: '#10b981' },
@@ -460,7 +573,20 @@ export const OcorrenciasDashboard: React.FC = () => {
     doc.setFontSize(16);
     doc.text('Relatório de Ocorrências', 14, 15);
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 22);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 21);
+
+    // Resumo de Filtros Aplicados
+    const activeFiltersList = [
+      selectedCPAs.length > 0 ? `CPAs: ${selectedCPAs.join(', ')}` : null,
+      selectedOPMs.length > 0 ? `OPMs: ${selectedOPMs.join(', ')}` : null,
+      selectedTurnos.length > 0 ? `Dia/Turno/Horário: ${selectedTurnos.join(', ')}` : null,
+    ].filter(Boolean);
+
+    const filterStr = activeFiltersList.length > 0 ? `Filtros: ${activeFiltersList.join(' | ')}` : 'Filtros: Todos os Registros';
+    doc.setFontSize(8);
+    doc.setTextColor(2, 132, 199);
+    doc.text(filterStr, 14, 26);
+    doc.setTextColor(0);
 
     // 1. Quadro de Resumo Geral
     const summaryRows = [
@@ -544,7 +670,35 @@ export const OcorrenciasDashboard: React.FC = () => {
       }
     });
 
-    // 3. Detalhamento das Dinâmicas (Relatos)
+    // 3. Distribuição por Turno e Horário
+    const turnoRows = turnoBarData.map(t => [
+      t.turno,
+      String(t.envios),
+      String(t.adultos),
+      String(t.adolescentes),
+      String(t.armas),
+      String(t.perfuro),
+      String(t.simulacros)
+    ]);
+
+    if (turnoRows.length > 0) {
+      doc.setFontSize(12);
+      doc.text('Distribuição por Turno Operacional', 14, (doc as any).lastAutoTable.finalY + 15);
+
+      autoTable(doc, {
+        head: [['TURNO / PERÍODO', 'ENVIOS', 'ADULT', 'ADOL', 'ARMA', 'PERF', 'SIMUL']],
+        body: turnoRows,
+        startY: (doc as any).lastAutoTable.finalY + 20,
+        theme: 'grid',
+        headStyles: { fillColor: [14, 116, 144] }, // Cyan 700
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: {
+          0: { fontStyle: 'bold', fillColor: [240, 249, 255] }
+        }
+      });
+    }
+
+    // 4. Detalhamento das Dinâmicas (Relatos)
     const dinamicaRows = filteredData.filter(item => {
       const d = getValFromItem(item, ['dinamica', 'relato', 'historico', 'descricao']);
       return d.length > 5;
@@ -608,45 +762,40 @@ export const OcorrenciasDashboard: React.FC = () => {
     <div className="space-y-8 pb-20">
       {/* Search and Action Controls */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 w-full">
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-[650px]">
+        <div className="flex flex-col gap-3 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
             {/* CPA Dropdown */}
-            <div className="relative flex-1">
+            <div className="relative">
               <button
                 onClick={() => {
                   setIsCPADropdownOpen(!isCPADropdownOpen);
                   setIsOPMDropdownOpen(false);
+                  setIsTurnoDropdownOpen(false);
                 }}
-                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
               >
-                <div className="flex items-center gap-2 truncate">
-                  <Filter className="w-4 h-4 text-sky-500 shrink-0" />
+                <div className="flex items-center gap-1.5 truncate">
+                  <Filter className="w-3.5 h-3.5 text-sky-500 shrink-0" />
                   {selectedCPAs.length === 0 ? (
-                    <span className="text-slate-500 font-extrabold">Todos os Comandos (CPA)</span>
+                    <span className="text-slate-500 font-extrabold truncate">Todos os CPAs</span>
                   ) : (
-                    <span className="text-sky-600 font-extrabold">
+                    <span className="text-sky-600 font-extrabold truncate">
                       {selectedCPAs.length} CPA(s)
                     </span>
                   )}
                 </div>
-                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isCPADropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${isCPADropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isCPADropdownOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-30" 
-                    onClick={() => setIsCPADropdownOpen(false)} 
-                  />
+                  <div className="fixed inset-0 z-30" onClick={() => setIsCPADropdownOpen(false)} />
                   <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
                     <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
                       <span>Selecione os CPAs</span>
                       {selectedCPAs.length > 0 && (
-                        <button
-                          onClick={() => setSelectedCPAs([])}
-                          className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
-                        >
-                          Limpar Todos
+                        <button onClick={() => setSelectedCPAs([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                          Limpar
                         </button>
                       )}
                     </div>
@@ -663,61 +812,51 @@ export const OcorrenciasDashboard: React.FC = () => {
                             }
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                            isSelected 
-                              ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
-                              : 'hover:bg-slate-50 text-slate-600'
+                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
                           }`}
                         >
                           <span>{cpa}</span>
-                          {isSelected && <Check className="w-4 h-4 text-sky-500" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
                         </button>
                       );
                     })}
-                    {allCPAs.length === 0 && (
-                      <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhum CPA encontrado</p>
-                    )}
                   </div>
                 </>
               )}
             </div>
 
             {/* OPM Dropdown */}
-            <div className="relative flex-1">
+            <div className="relative">
               <button
                 onClick={() => {
                   setIsOPMDropdownOpen(!isOPMDropdownOpen);
                   setIsCPADropdownOpen(false);
+                  setIsTurnoDropdownOpen(false);
                 }}
-                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase text-xs active:bg-slate-100"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
               >
-                <div className="flex items-center gap-2 truncate">
-                  <Filter className="w-4 h-4 text-sky-500 shrink-0" />
+                <div className="flex items-center gap-1.5 truncate">
+                  <Building2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
                   {selectedOPMs.length === 0 ? (
-                    <span className="text-slate-500 font-extrabold">Todas as OPMs Ativas</span>
+                    <span className="text-slate-500 font-extrabold truncate">Todas OPMs</span>
                   ) : (
-                    <span className="text-sky-600 font-extrabold">
+                    <span className="text-sky-600 font-extrabold truncate">
                       {selectedOPMs.length} OPM(s)
                     </span>
                   )}
                 </div>
-                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOPMDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${isOPMDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isOPMDropdownOpen && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-30" 
-                    onClick={() => setIsOPMDropdownOpen(false)} 
-                  />
+                  <div className="fixed inset-0 z-30" onClick={() => setIsOPMDropdownOpen(false)} />
                   <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
                     <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
                       <span>Selecione as OPMs</span>
                       {selectedOPMs.length > 0 && (
-                        <button
-                          onClick={() => setSelectedOPMs([])}
-                          className="text-rose-500 hover:text-rose-700 transition-colors normal-case text-[10px] font-bold"
-                        >
-                          Limpar Todas
+                        <button onClick={() => setSelectedOPMs([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                          Limpar
                         </button>
                       )}
                     </div>
@@ -734,68 +873,118 @@ export const OcorrenciasDashboard: React.FC = () => {
                             }
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                            isSelected 
-                              ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' 
-                              : 'hover:bg-slate-50 text-slate-600'
+                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
                           }`}
                         >
                           <span>{opm}</span>
-                          {isSelected && <Check className="w-4 h-4 text-sky-500" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
                         </button>
                       );
                     })}
-                    {availableOPMs.length === 0 && (
-                      <p className="text-[10px] italic text-slate-400 p-2 text-center uppercase font-bold">Nenhuma OPM encontrada</p>
-                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Dia / Turno / Horário Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsTurnoDropdownOpen(!isTurnoDropdownOpen);
+                  setIsCPADropdownOpen(false);
+                  setIsOPMDropdownOpen(false);
+                }}
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <Clock className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  {selectedTurnos.length === 0 ? (
+                    <span className="text-slate-500 font-extrabold truncate">Dia / Turno / Horário</span>
+                  ) : (
+                    <span className="text-sky-600 font-extrabold truncate">
+                      {selectedTurnos.length} Dia/Turno/Horário
+                    </span>
+                  )}
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${isTurnoDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isTurnoDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsTurnoDropdownOpen(false)} />
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                      <span>Selecione Dia / Turno / Horário</span>
+                      {selectedTurnos.length > 0 && (
+                        <button onClick={() => setSelectedTurnos([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    {allTurnos.map(turno => {
+                      const isSelected = selectedTurnos.includes(turno);
+                      return (
+                        <button
+                          key={turno}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedTurnos(selectedTurnos.filter(t => t !== turno));
+                            } else {
+                              setSelectedTurnos([...selectedTurnos, turno]);
+                            }
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
+                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          <span>{turno}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </>
               )}
             </div>
           </div>
           
-          <div className="grid grid-cols-2 lg:flex items-center gap-2 w-full lg:w-auto">
-            {(selectedCPAs.length > 0 || selectedOPMs.length > 0) && (
+          <div className="flex flex-wrap items-center justify-end gap-2 w-full pt-1">
+            {(selectedCPAs.length > 0 || selectedOPMs.length > 0 || selectedTurnos.length > 0) && (
               <button 
-                onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); }}
-                className="col-span-2 lg:col-span-1 flex items-center justify-center gap-2 bg-rose-50 text-rose-600 border border-rose-200/60 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-rose-100/70 transition-all shadow-sm active:scale-95"
+                onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); setSelectedTurnos([]); }}
+                className="flex items-center justify-center gap-2 bg-rose-50 text-rose-600 border border-rose-200/60 px-4 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-rose-100/70 transition-all shadow-sm active:scale-95"
               >
-                <X className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-rose-500" /> 
-                Limpar Filtros
+                <X className="w-3.5 h-3.5 text-rose-500" /> 
+                Limpar Todos os Filtros
               </button>
             )}
             <button 
               onClick={fetchData} 
-              className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-3 lg:px-5 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
+              className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
             >
-              <RefreshCw className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
+              <RefreshCw className="w-3.5 h-3.5" /> 
               Sincronizar
             </button>
             <button 
               onClick={exportPDF} 
-              className="flex items-center justify-center gap-2 bg-sky-600 text-white px-3 lg:px-6 py-2.5 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 bg-sky-600 text-white px-5 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition-all active:scale-95"
             >
-              <FileDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> 
+              <FileDown className="w-3.5 h-3.5" /> 
               Exportar PDF
             </button>
           </div>
         </div>
 
-        {/* Badge lists for filtered CPAs and OPMs */}
-        {(selectedCPAs.length > 0 || selectedOPMs.length > 0) && (
+        {/* Badge lists for active filters */}
+        {(selectedCPAs.length > 0 || selectedOPMs.length > 0 || selectedTurnos.length > 0) && (
           <div className="flex flex-wrap gap-1.5 items-center justify-start py-1 px-1 border-t border-slate-100 pt-3">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros Ativos:</span>
             
             {/* CPAs Badges */}
             {selectedCPAs.map(cpa => (
-              <span 
-                key={cpa} 
-                className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-400 uppercase tracking-wider"
-              >
+              <span key={cpa} className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-400 uppercase tracking-wider">
                 CPA: {cpa}
-                <button 
-                  onClick={() => setSelectedCPAs(selectedCPAs.filter(c => c !== cpa))}
-                  className="hover:bg-slate-800 p-0.5 rounded-full transition-colors"
-                >
+                <button onClick={() => setSelectedCPAs(selectedCPAs.filter(c => c !== cpa))} className="hover:bg-slate-800 p-0.5 rounded-full transition-colors">
                   <X className="w-2.5 h-2.5 text-sky-400" />
                 </button>
               </span>
@@ -803,23 +992,26 @@ export const OcorrenciasDashboard: React.FC = () => {
 
             {/* OPMs Badges */}
             {selectedOPMs.map(opm => (
-              <span 
-                key={opm} 
-                className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider"
-              >
+              <span key={opm} className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider">
                 OPM: {opm}
-                <button 
-                  onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))}
-                  className="hover:bg-sky-200 p-0.5 rounded-full transition-colors"
-                >
+                <button onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))} className="hover:bg-sky-200 p-0.5 rounded-full transition-colors">
                   <X className="w-2.5 h-2.5 text-sky-700" />
                 </button>
               </span>
             ))}
 
-            {/* General dynamic clear card */}
+            {/* Turnos Badges */}
+            {selectedTurnos.map(turno => (
+              <span key={turno} className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[9px] font-black text-amber-700 uppercase tracking-wider">
+                Dia/Turno/Horário: {turno}
+                <button onClick={() => setSelectedTurnos(selectedTurnos.filter(t => t !== turno))} className="hover:bg-amber-200 p-0.5 rounded-full transition-colors">
+                  <X className="w-2.5 h-2.5 text-amber-700" />
+                </button>
+              </span>
+            ))}
+
             <button
-              onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); }}
+              onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); setSelectedTurnos([]); }}
               className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200/50 hover:bg-rose-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-rose-700 uppercase tracking-wider transition-all active:scale-95"
             >
               <X className="w-2.5 h-2.5" />
@@ -1082,6 +1274,66 @@ export const OcorrenciasDashboard: React.FC = () => {
         )}
       </section>
 
+      {/* Temporal Analysis Chart: Dia / Turno / Horário */}
+      <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <Clock className="w-5 h-5 text-sky-600" />
+              Distribuição Temporal (Dia / Turno / Horário)
+            </h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              Análise comparativa completa de envios, prisões, apreensões e materiais recolhidos por período
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
+            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-sky-600 inline-block" /> Envios
+            </span>
+            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos Presos
+            </span>
+            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adolescentes
+            </span>
+            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas de Fogo
+            </span>
+            <span className="flex items-center gap-1.5 text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-lg border border-cyan-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500 inline-block" /> Perfurocortantes
+            </span>
+            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full bg-slate-50/50 p-4 rounded-xl border border-slate-200">
+          {turnoBarData.length === 0 ? (
+            <p className="text-[10px] text-slate-400 font-bold text-center py-12 uppercase">Sem dados registrados para este período</p>
+          ) : (
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={turnoBarData} margin={{ top: 20, right: 15, left: -20, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="turno" tick={{ fontSize: 9, fontWeight: '800', fill: '#475569' }} interval={0} angle={-10} textAnchor="end" />
+                  <YAxis tick={{ fontSize: 9, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip content={<CustomBarTooltip />} />
+                  <Bar dataKey="envios" name="Envios" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                    <LabelList dataKey="envios" position="top" style={{ fontSize: 9, fontWeight: '900', fill: '#0369a1' }} />
+                  </Bar>
+                  <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="adolescentes" name="Adolescentes" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Main Data Table */}
       <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-2xl">
         <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
@@ -1117,7 +1369,7 @@ export const OcorrenciasDashboard: React.FC = () => {
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Perfuro</th>
                 <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Simul.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dinâmica</th>
+                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800 w-[360px] min-w-[320px]">Dinâmica da Ocorrência</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 italic">
@@ -1204,8 +1456,61 @@ export const OcorrenciasDashboard: React.FC = () => {
                   return key ? String(item[key]) : '-';
                 };
 
+                const getVultoVal = () => {
+                  const vPatterns = ['vulto', 'interesse', 'houve'];
+                  const vKey = keys.find(k => {
+                    const norm = normalizeStr(k);
+                    return vPatterns.some(p => norm.includes(p)) && !norm.includes('dinamica') && !norm.includes('relato') && !norm.includes('descricao');
+                  });
+                  if (vKey && item[vKey]) {
+                    const raw = String(item[vKey]).trim().toUpperCase();
+                    if (raw.includes('SIM') || raw === 'S' || raw === '1') return 'SIM';
+                    if (raw.includes('NAO') || raw.includes('NÃO') || raw === 'N' || raw === '0') return 'NÃO';
+                    return raw;
+                  }
+                  return '-';
+                };
+
+                const getDinamicaVal = () => {
+                  const dinamicaPatterns = ['dinamica', 'relato', 'historico', 'sintese', 'descricao', 'narrativa', 'detalhe', 'fato', 'resumo'];
+                  const excludePatterns = ['houve', 'vulto', 'interesse', 'email', 'carimbo', 'data', 'hora', 'local', 'endereco', 'cpf', 'rg', 'telefone', 'posto', 'nome', 'guerra', 'opm', 'unidade', 'cpa'];
+
+                  // Prioridade 1: Chave contendo termos de narrativa e SEM padrões de campos booleanos/técnicos
+                  let dKey = keys.find(k => {
+                    const norm = normalizeStr(k);
+                    const matchesD = dinamicaPatterns.some(p => norm.includes(p));
+                    const isEx = excludePatterns.some(p => norm.includes(p));
+                    return matchesD && !isEx;
+                  });
+
+                  // Prioridade 2: Chave contendo termos de narrativa
+                  if (!dKey) {
+                    dKey = keys.find(k => {
+                      const norm = normalizeStr(k);
+                      return dinamicaPatterns.some(p => norm.includes(p));
+                    });
+                  }
+
+                  // Prioridade 3: Procura por campo com texto longo do registro
+                  if (!dKey) {
+                    dKey = keys.find(k => {
+                      const norm = normalizeStr(k);
+                      const val = String(item[k] || '').trim();
+                      const isSystem = excludePatterns.some(p => norm.includes(p));
+                      return !isSystem && val.length > 20 && !['SIM', 'NÃO', 'NAO', '-'].includes(val.toUpperCase());
+                    });
+                  }
+
+                  if (dKey && item[dKey]) {
+                    const val = String(item[dKey]).trim();
+                    if (val && val !== '-') return val;
+                  }
+                  return '-';
+                };
+
                 const localValue = getLocalVal();
-                const vultoVal = getVal(['vulto', 'houve']).toUpperCase();
+                const vultoVal = getVultoVal();
+                const dinamicaVal = getDinamicaVal();
 
                 return (
                   <tr 
@@ -1252,8 +1557,12 @@ export const OcorrenciasDashboard: React.FC = () => {
                     <td className="px-6 py-4 text-center text-xs font-black bg-rose-50/30 text-rose-700">{getVal(['arma'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-sky-50/30 text-sky-700">{getVal(['perfuro'])}</td>
                     <td className="px-6 py-4 text-center text-xs font-black bg-indigo-50/30 text-indigo-700">{getVal(['simulacro'])}</td>
-                    <td className="px-6 py-4 text-[11px] text-slate-800 font-bold leading-relaxed min-w-[300px] bg-slate-50/50 whitespace-pre-wrap border-l border-slate-200">
-                      {getVal(['dinamica', 'vulto', 'interesse', 'resumo', 'local'])}
+                    <td className="p-3 w-[360px] min-w-[320px] max-w-[400px] bg-slate-50/50 border-l border-slate-200 align-top">
+                      <div className="max-h-[96px] overflow-y-auto custom-scrollbar p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:border-sky-300 transition-colors">
+                        <p className="text-[11px] text-slate-800 font-semibold leading-relaxed break-words whitespace-pre-wrap not-italic">
+                          {dinamicaVal}
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 );
