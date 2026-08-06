@@ -28,7 +28,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                 <span className="md:hidden">EMG-PM/3</span>
               </h1>
               <p className="text-[10px] md:text-xs text-sky-300/80 font-bold tracking-[0.1em] md:tracking-[0.2em] uppercase leading-tight">
-                GRANDES EVENTOS - OPERAÇÕES
+                GRANDES EVENTOS - OPERAÇÃO ROCK IN RIO 2026
               </p>
             </div>
           </div>

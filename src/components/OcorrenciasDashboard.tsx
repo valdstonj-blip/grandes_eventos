@@ -23,7 +23,9 @@ import {
   ChevronDown,
   Check,
   Clock,
-  Calendar
+  Calendar,
+  ExternalLink,
+  LayoutDashboard
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -68,6 +70,7 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
 export const OcorrenciasDashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'native' | 'looker'>('native');
   const [selectedCPAs, setSelectedCPAs] = useState<string[]>([]);
   const [isCPADropdownOpen, setIsCPADropdownOpen] = useState(false);
   const [selectedOPMs, setSelectedOPMs] = useState<string[]>([]);
@@ -585,7 +588,7 @@ export const OcorrenciasDashboard: React.FC = () => {
   const exportPDF = () => {
     const doc = new jsPDF() as any;
     doc.setFontSize(16);
-    doc.text('Relatório de Ocorrências', 14, 15);
+    doc.text('Relatório de Ocorrências - Operação Rock in Rio 2026', 14, 15);
     doc.setFontSize(10);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 21);
 
@@ -774,8 +777,95 @@ export const OcorrenciasDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Search and Action Controls */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
+      {/* Top View Mode Switcher */}
+      <div className="bg-[#0f172a] p-2.5 rounded-2xl border border-sky-600/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800/80 w-full sm:w-auto">
+          <button
+            onClick={() => setViewMode('native')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+              viewMode === 'native'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Shield className="w-4 h-4 text-sky-300" />
+            <span>Painel Operacional PM/3</span>
+          </button>
+          <button
+            onClick={() => setViewMode('looker')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+              viewMode === 'looker'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4 text-amber-400" />
+            <span>Dashboard Looker Studio</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 text-[10px] font-extrabold text-sky-300/80 uppercase tracking-widest px-3">
+          <span>Modo de Visualização Ativo</span>
+        </div>
+      </div>
+
+      {viewMode === 'looker' ? (
+        <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5 text-sky-600" />
+                Dashboard Looker Studio (Data Studio)
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Visualização em tempo real sincronizada via Google Data Studio.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href="https://datastudio.google.com/embed/reporting/a6849902-dac8-4b3e-94cb-910bf12e7515/page/p_0xf1bt4p2c"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-sky-600" />
+                <span>Abrir em Nova Aba</span>
+              </a>
+              <button
+                onClick={() => setViewMode('native')}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Voltar ao Painel PM/3</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-amber-900">
+            <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-extrabold uppercase tracking-wide">Aviso de Autenticação Google:</span> O Looker Studio (Data Studio) exige login em conta Google autorizada. Se a visualização abaixo não carregar ou exigir permissão, utilize o botão <span className="font-black text-sky-700 uppercase">"Abrir em Nova Aba"</span> acima para acessar logado na sua conta Google.
+            </div>
+          </div>
+
+          <div className="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-inner p-1">
+            <iframe
+              width="100%"
+              height="800"
+              src="https://datastudio.google.com/embed/reporting/a6849902-dac8-4b3e-94cb-910bf12e7515/page/p_0xf1bt4p2c"
+              frameBorder="0"
+              style={{ border: 0 }}
+              allowFullScreen
+              sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              className="w-full h-[650px] md:h-[800px] rounded-xl"
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Search and Action Controls */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
         <div className="flex flex-col gap-3 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
             {/* CPA Dropdown */}
@@ -1607,6 +1697,9 @@ export const OcorrenciasDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+        </>
+      )}
 
       {/* Detail Modal */}
       <AnimatePresence>
