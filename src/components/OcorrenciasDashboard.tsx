@@ -520,7 +520,7 @@ export const OcorrenciasDashboard: React.FC = () => {
   };
 
   const opmBarData = useMemo(() => {
-    const map: Record<string, { opm: string; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; total: number }> = {};
+    const map: Record<string, { opm: string; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; detidos: number; materiais: number }> = {};
 
     filteredData.forEach(item => {
       const opm = getItemOPM(item);
@@ -533,7 +533,7 @@ export const OcorrenciasDashboard: React.FC = () => {
       const simulacros = getItemSumByPatterns(['simulacro'], item);
 
       if (!map[opm]) {
-        map[opm] = { opm, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, total: 0 };
+        map[opm] = { opm, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, detidos: 0, materiais: 0 };
       }
 
       map[opm].adultos += adultos;
@@ -541,15 +541,16 @@ export const OcorrenciasDashboard: React.FC = () => {
       map[opm].armas += armas;
       map[opm].perfuro += perfuro;
       map[opm].simulacros += simulacros;
-      map[opm].total += (adultos + adolescentes + armas + perfuro + simulacros);
+      map[opm].detidos += (adultos + adolescentes);
+      map[opm].materiais += (armas + perfuro + simulacros);
     });
 
     return Object.values(map)
-      .sort((a, b) => b.total - a.total || a.opm.localeCompare(b.opm));
+      .sort((a, b) => (b.detidos + b.materiais) - (a.detidos + a.materiais) || a.opm.localeCompare(b.opm));
   }, [filteredData]);
 
   const turnoBarData = useMemo(() => {
-    const map: Record<string, { turno: string; envios: number; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; total: number }> = {};
+    const map: Record<string, { turno: string; envios: number; adultos: number; adolescentes: number; armas: number; perfuro: number; simulacros: number; detidos: number; materiais: number }> = {};
 
     filteredData.forEach(item => {
       const turno = getItemTurno(item);
@@ -560,7 +561,7 @@ export const OcorrenciasDashboard: React.FC = () => {
       const simulacros = getItemSumByPatterns(['simulacro'], item);
 
       if (!map[turno]) {
-        map[turno] = { turno, envios: 0, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, total: 0 };
+        map[turno] = { turno, envios: 0, adultos: 0, adolescentes: 0, armas: 0, perfuro: 0, simulacros: 0, detidos: 0, materiais: 0 };
       }
 
       map[turno].envios += 1;
@@ -569,7 +570,8 @@ export const OcorrenciasDashboard: React.FC = () => {
       map[turno].armas += armas;
       map[turno].perfuro += perfuro;
       map[turno].simulacros += simulacros;
-      map[turno].total += (adultos + adolescentes + armas + perfuro + simulacros);
+      map[turno].detidos += (adultos + adolescentes);
+      map[turno].materiais += (armas + perfuro + simulacros);
     });
 
     return Object.values(map).sort((a, b) => b.envios - a.envios);
@@ -1282,10 +1284,10 @@ export const OcorrenciasDashboard: React.FC = () => {
       </section>
 
       {/* OPM Bar Chart Section (before Detailed Records Table) */}
-      <section className="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+      <section className="bg-white p-4 sm:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-900 rounded-2xl text-sky-400 shadow-md">
+            <div className="p-3 bg-slate-900 rounded-2xl text-sky-400 shadow-md shrink-0">
               <Activity className="w-5 h-5" />
             </div>
             <div>
@@ -1298,20 +1300,20 @@ export const OcorrenciasDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase">
-            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[10px] font-black uppercase">
+            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos
             </span>
-            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adol.
             </span>
-            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas
             </span>
-            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2 py-1 rounded-lg border border-sky-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-sky-500 inline-block" /> Perfuro
             </span>
-            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
             </span>
           </div>
@@ -1323,67 +1325,111 @@ export const OcorrenciasDashboard: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="h-[380px] w-full pt-2">
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={opmBarData} margin={{ top: 25, right: 10, left: -20, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="opm" 
-                    tick={{ fontSize: 10, fontWeight: '800', fill: '#475569' }} 
-                    interval={0} 
-                    angle={-30} 
-                    textAnchor="end" 
-                    height={70} 
-                  />
-                  <YAxis tick={{ fontSize: 10, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
-                  <Tooltip content={<CustomBarTooltip />} />
-                  <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                    <LabelList dataKey="adultos" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#059669' }} />
-                  </Bar>
-                  <Bar dataKey="adolescentes" name="Adolescentes Apreendidos" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                    <LabelList dataKey="adolescentes" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#d97706' }} />
-                  </Bar>
-                  <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                    <LabelList dataKey="armas" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#e11d48' }} />
-                  </Bar>
-                  <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                    <LabelList dataKey="perfuro" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#0284c7' }} />
-                  </Bar>
-                  <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={28}>
-                    <LabelList dataKey="simulacros" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#4f46e5' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-[340px] sm:h-[380px] w-full pt-2 overflow-x-auto custom-scrollbar">
+              <div className="min-w-[500px] h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={opmBarData} margin={{ top: 25, right: 10, left: -20, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis 
+                      dataKey="opm" 
+                      tick={{ fontSize: 10, fontWeight: '800', fill: '#475569' }} 
+                      interval={0} 
+                      angle={-30} 
+                      textAnchor="end" 
+                      height={70} 
+                    />
+                    <YAxis tick={{ fontSize: 10, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
+                    <Tooltip content={<CustomBarTooltip />} />
+                    <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      <LabelList dataKey="adultos" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#059669' }} />
+                    </Bar>
+                    <Bar dataKey="adolescentes" name="Adolescentes Apreendidos" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      <LabelList dataKey="adolescentes" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#d97706' }} />
+                    </Bar>
+                    <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      <LabelList dataKey="armas" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#e11d48' }} />
+                    </Bar>
+                    <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      <LabelList dataKey="perfuro" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#0284c7' }} />
+                    </Bar>
+                    <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={28}>
+                      <LabelList dataKey="simulacros" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 10, fontWeight: '900', fill: '#4f46e5' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            {/* Quick Numeric Summary per OPM */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-4 border-t border-slate-100">
-              {opmBarData.map(o => (
-                <div key={o.opm} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm hover:border-sky-300 transition-all">
-                  <div className="font-black text-slate-900 text-xs uppercase mb-1 flex justify-between items-center">
-                    <span>{o.opm}</span>
-                    <span className="text-[9px] font-mono text-slate-400">{o.total} total</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 text-[9px] font-bold">
-                    {o.adultos > 0 && <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">{o.adultos} Presos</span>}
-                    {o.adolescentes > 0 && <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">{o.adolescentes} Adol.</span>}
-                    {o.armas > 0 && <span className="bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">{o.armas} Armas</span>}
-                    {o.perfuro > 0 && <span className="bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded">{o.perfuro} Perfuro</span>}
-                    {o.simulacros > 0 && <span className="bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded">{o.simulacros} Simul.</span>}
-                  </div>
-                </div>
-              ))}
+            {/* Compact Tabular Summary per OPM */}
+            <div className="space-y-2 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-sky-600" />
+                  Resumo Numérico Sintético por OPM
+                </span>
+                <span className="text-[9px] font-extrabold text-sky-600 uppercase">
+                  {opmBarData.length} Unidade(s)
+                </span>
+              </div>
+
+              <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm custom-scrollbar">
+                <table className="w-full text-left text-xs border-collapse min-w-[560px]">
+                  <thead>
+                    <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
+                      <th className="py-2.5 px-3">OPM / Unidade</th>
+                      <th className="py-2.5 px-2 text-center text-emerald-400">Adultos</th>
+                      <th className="py-2.5 px-2 text-center text-amber-400">Adol.</th>
+                      <th className="py-2.5 px-2.5 text-center text-emerald-300 bg-slate-800">Detidos (Pessoas)</th>
+                      <th className="py-2.5 px-2 text-center text-rose-400">Armas</th>
+                      <th className="py-2.5 px-2 text-center text-sky-400">Perfuro</th>
+                      <th className="py-2.5 px-2 text-center text-indigo-400">Simul.</th>
+                      <th className="py-2.5 px-2.5 text-center text-rose-300 bg-slate-800">Materiais (Armas/Obj.)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                    {opmBarData.map((o, idx) => (
+                      <tr key={o.opm} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-50'}>
+                        <td className="py-2 px-3 font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+                          {o.opm}
+                        </td>
+                        <td className="py-2 px-2 text-center font-mono">
+                          {o.adultos > 0 ? <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black">{o.adultos}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2 text-center font-mono">
+                          {o.adolescentes > 0 ? <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-black">{o.adolescentes}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2.5 text-center font-mono bg-emerald-50/40">
+                          {o.detidos > 0 ? <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-xs shadow-xs">{o.detidos}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2 text-center font-mono">
+                          {o.armas > 0 ? <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-black">{o.armas}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2 text-center font-mono">
+                          {o.perfuro > 0 ? <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-black">{o.perfuro}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2 text-center font-mono">
+                          {o.simulacros > 0 ? <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-black">{o.simulacros}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="py-2 px-2.5 text-center font-mono bg-rose-50/40">
+                          {o.materiais > 0 ? <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-xs shadow-xs">{o.materiais}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
       </section>
 
       {/* Temporal Analysis Chart: Dia / Turno / Horário */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl space-y-6">
+      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
           <div>
             <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-              <Clock className="w-5 h-5 text-sky-600" />
+              <Clock className="w-5 h-5 text-sky-600 shrink-0" />
               Distribuição Temporal (Dia / Turno / Horário)
             </h3>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -1391,48 +1437,127 @@ export const OcorrenciasDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
-            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2 py-1 rounded-lg border border-sky-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-sky-600 inline-block" /> Envios
             </span>
-            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos Presos
+            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos
             </span>
-            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adolescentes
+            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adol.
             </span>
-            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas de Fogo
+            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas
             </span>
-            <span className="flex items-center gap-1.5 text-cyan-700 bg-cyan-50 px-2.5 py-1 rounded-lg border border-cyan-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500 inline-block" /> Perfurocortantes
+            <span className="flex items-center gap-1.5 text-cyan-700 bg-cyan-50 px-2 py-1 rounded-lg border border-cyan-200">
+              <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500 inline-block" /> Perfuro
             </span>
-            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
             </span>
           </div>
         </div>
 
-        <div className="w-full bg-slate-50/50 p-4 rounded-xl border border-slate-200">
+        <div className="w-full bg-slate-50/50 p-3 sm:p-4 rounded-xl border border-slate-200">
           {turnoBarData.length === 0 ? (
             <p className="text-[10px] text-slate-400 font-bold text-center py-12 uppercase">Sem dados registrados para este período</p>
           ) : (
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={turnoBarData} margin={{ top: 20, right: 15, left: -20, bottom: 25 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="turno" tick={{ fontSize: 9, fontWeight: '800', fill: '#475569' }} interval={0} angle={-10} textAnchor="end" />
-                  <YAxis tick={{ fontSize: 9, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
-                  <Tooltip content={<CustomBarTooltip />} />
-                  <Bar dataKey="envios" name="Envios" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={22}>
-                    <LabelList dataKey="envios" position="top" style={{ fontSize: 9, fontWeight: '900', fill: '#0369a1' }} />
-                  </Bar>
-                  <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                  <Bar dataKey="adolescentes" name="Adolescentes" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                  <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                  <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                  <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-6">
+              <div className="h-[280px] sm:h-[320px] w-full overflow-x-auto custom-scrollbar">
+                <div className="min-w-[480px] h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={turnoBarData} margin={{ top: 20, right: 15, left: -20, bottom: 25 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="turno" tick={{ fontSize: 9, fontWeight: '800', fill: '#475569' }} interval={0} angle={-10} textAnchor="end" />
+                      <YAxis tick={{ fontSize: 9, fontWeight: '700', fill: '#64748b' }} allowDecimals={false} />
+                      <Tooltip content={<CustomBarTooltip />} />
+                      <Bar dataKey="envios" name="Envios" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="envios" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#0369a1' }} />
+                      </Bar>
+                      <Bar dataKey="adultos" name="Adultos Presos" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="adultos" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#059669' }} />
+                      </Bar>
+                      <Bar dataKey="adolescentes" name="Adolescentes" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="adolescentes" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#d97706' }} />
+                      </Bar>
+                      <Bar dataKey="armas" name="Armas de Fogo" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="armas" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#e11d48' }} />
+                      </Bar>
+                      <Bar dataKey="perfuro" name="Perfurocortantes" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="perfuro" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#0284c7' }} />
+                      </Bar>
+                      <Bar dataKey="simulacros" name="Simulacros" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={22}>
+                        <LabelList dataKey="simulacros" position="top" formatter={(val: any) => (Number(val) > 0 ? val : '')} style={{ fontSize: 9, fontWeight: '900', fill: '#4f46e5' }} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Compact Tabular Summary per Turno / Período */}
+              <div className="space-y-2 pt-3 border-t border-slate-200/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    Resumo Numérico Sintético por Turno / Período
+                  </span>
+                  <span className="text-[9px] font-extrabold text-sky-600 uppercase">
+                    {turnoBarData.length} Período(s)
+                  </span>
+                </div>
+
+                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse min-w-[580px]">
+                    <thead>
+                      <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
+                        <th className="py-2.5 px-3">Turno / Data</th>
+                        <th className="py-2.5 px-2 text-center text-sky-400">Envios</th>
+                        <th className="py-2.5 px-2 text-center text-emerald-400">Adultos</th>
+                        <th className="py-2.5 px-2 text-center text-amber-400">Adol.</th>
+                        <th className="py-2.5 px-2.5 text-center text-emerald-300 bg-slate-800">Detidos (Pessoas)</th>
+                        <th className="py-2.5 px-2 text-center text-rose-400">Armas</th>
+                        <th className="py-2.5 px-2 text-center text-cyan-400">Perfuro</th>
+                        <th className="py-2.5 px-2 text-center text-indigo-400">Simul.</th>
+                        <th className="py-2.5 px-2.5 text-center text-rose-300 bg-slate-800">Materiais (Armas/Obj.)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                      {turnoBarData.map((t, idx) => (
+                        <tr key={t.turno} className={idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60 hover:bg-slate-50'}>
+                          <td className="py-2 px-3 font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                            {t.turno}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 font-black">{t.envios}</span>
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            {t.adultos > 0 ? <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black">{t.adultos}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            {t.adolescentes > 0 ? <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-black">{t.adolescentes}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2.5 text-center font-mono bg-emerald-50/40">
+                            {t.detidos > 0 ? <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-xs shadow-xs">{t.detidos}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            {t.armas > 0 ? <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-black">{t.armas}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            {t.perfuro > 0 ? <span className="px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 font-black">{t.perfuro}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2 text-center font-mono">
+                            {t.simulacros > 0 ? <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-black">{t.simulacros}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="py-2 px-2.5 text-center font-mono bg-rose-50/40">
+                            {t.materiais > 0 ? <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-xs shadow-xs">{t.materiais}</span> : <span className="text-slate-300">-</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
