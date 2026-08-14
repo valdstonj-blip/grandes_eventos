@@ -780,33 +780,35 @@ export const OcorrenciasDashboard: React.FC = () => {
   return (
     <div className="space-y-8 pb-20">
       {/* Top View Mode Switcher */}
-      <div className="bg-[#0f172a] p-2.5 rounded-2xl border border-sky-600/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800/80 w-full sm:w-auto">
+      <div className="bg-[#0f172a] p-2 sm:p-2.5 rounded-2xl border border-sky-600/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800/80 w-full sm:w-auto">
           <button
             onClick={() => setViewMode('native')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
               viewMode === 'native'
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Shield className="w-4 h-4 text-sky-300" />
-            <span>Painel Operacional PM/3</span>
+            <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-300 shrink-0" />
+            <span className="hidden sm:inline">Painel Operacional PM/3</span>
+            <span className="sm:hidden">Painel PM/3</span>
           </button>
           <button
             onClick={() => setViewMode('looker')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
               viewMode === 'looker'
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4 text-amber-400" />
-            <span>Dashboard Looker Studio</span>
+            <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+            <span className="hidden sm:inline">Dashboard Looker Studio</span>
+            <span className="sm:hidden">Looker Studio</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-[10px] font-extrabold text-sky-300/80 uppercase tracking-widest px-3">
+        <div className="hidden sm:flex items-center gap-2 text-[10px] font-extrabold text-sky-300/80 uppercase tracking-widest px-3">
           <span>Modo de Visualização Ativo</span>
         </div>
       </div>

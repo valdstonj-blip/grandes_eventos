@@ -17,52 +17,75 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Header - Navy Military Design */}
       <header className="bg-[#0f172a] border-b border-sky-600/30 shadow-[0_4px_20px_rgba(0,0,0,0.1)] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-sky-600 p-2 rounded-lg shadow-lg">
-              <Shield className="w-6 h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4">
+          
+          {/* Top Row on Mobile / Left Section on Desktop */}
+          <div className="flex items-center justify-between gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="bg-sky-600 p-2 sm:p-2.5 rounded-xl shadow-lg shrink-0">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base sm:text-lg md:text-xl font-black bg-gradient-to-r from-sky-300 to-white bg-clip-text text-transparent uppercase tracking-tight leading-none truncate">
+                    EMG PM/3
+                  </h1>
+                  <span className="hidden sm:inline-block text-[9px] font-black text-sky-300 bg-sky-950/80 border border-sky-800/60 px-1.5 py-0.5 rounded uppercase">
+                    Operações
+                  </span>
+                </div>
+                <p className="text-[10px] sm:text-xs text-sky-300/80 font-bold tracking-wider uppercase leading-tight truncate">
+                  GRANDES EVENTOS - ROCK IN RIO 2026
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-black bg-gradient-to-r from-sky-300 to-white bg-clip-text text-transparent uppercase tracking-tight leading-none mb-0.5">
-                <span className="hidden md:inline">Estado Maior Geral PM/3</span>
-                <span className="md:hidden">EMG-PM/3</span>
-              </h1>
-              <p className="text-[10px] md:text-xs text-sky-300/80 font-bold tracking-[0.1em] md:tracking-[0.2em] uppercase leading-tight">
-                GRANDES EVENTOS - OPERAÇÃO ROCK IN RIO 2026
-              </p>
-            </div>
+
+            {/* Mobile User / Logout Button */}
+            {session && onLogout && (
+              <div className="flex md:hidden items-center gap-1.5 shrink-0">
+                <button
+                  onClick={onLogout}
+                  title="Sair do Sistema"
+                  className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-lg font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 transition-all active:scale-95"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Sair</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <nav className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-2xl border border-slate-800">
+          {/* Navigation & Desktop User Actions */}
+          <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-3 w-full md:w-auto">
+            <nav className="grid grid-cols-2 md:flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl sm:rounded-2xl border border-slate-800/80 w-full md:w-auto shadow-inner">
               <button
                 onClick={() => setActiveTab('ocorrencias')}
-                className={`px-3 md:px-4 py-1.5 rounded-xl flex items-center gap-1.5 font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all ${
+                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                   activeTab === 'ocorrencias'
-                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5" />
+                <Activity className="w-3.5 h-3.5 shrink-0" />
                 <span>Ocorrências</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('faltas-dispensas')}
-                className={`px-3 md:px-4 py-1.5 rounded-xl flex items-center gap-1.5 font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all ${
+                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                   activeTab === 'faltas-dispensas'
-                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <Users className="w-3.5 h-3.5" />
+                <Users className="w-3.5 h-3.5 shrink-0" />
                 <span>Faltas & Efetivo</span>
               </button>
             </nav>
 
             {session && (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-                <div className="hidden lg:flex flex-col text-right">
+              <div className="hidden md:flex items-center gap-2.5 pl-3 border-l border-slate-800 shrink-0">
+                <div className="flex flex-col text-right">
                   <span className="text-[11px] font-black text-white leading-tight flex items-center gap-1 justify-end">
                     <UserCheck className="w-3 h-3 text-emerald-400" />
                     {session.name}
@@ -76,10 +99,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
                   <button
                     onClick={onLogout}
                     title="Sair do Sistema"
-                    className="p-2 sm:px-3 sm:py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95"
+                    className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Sair</span>
+                    <span>Sair</span>
                   </button>
                 )}
               </div>
