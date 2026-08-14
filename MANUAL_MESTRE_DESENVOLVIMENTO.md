@@ -115,5 +115,19 @@ Para garantir que o usuário não se depare com uma tela em branco caso digite o
 Sempre mantenha esta configuração ativa na raiz de desenvolvimento. Ela remove a necessidade de intervenção por parte dos usuários e de redirecionamentos adicionais complexos integrados ao provedor de hospedagem de código estático.
 
 ---
-**Nota Técnica:** Este manual estabelece um patamar de alta engenharia, garantindo um sistema operacional de blindagem máxima de tráfego, design imponente e integridade matemática impecável para todos os módulos (Ocorrências, Escalas, Faltas e Dispensas).
+
+## 7. Módulo de Efetivo & Controle de Faltas (Doutrina Operacional de Unidades)
+
+Nos relatórios de faltas e escalas extraordinárias do EMG PM/3, estabeleceu-se o padrão analítico duplo:
+
+1. **Separação entre Unidade Demandante e Unidade de Origem:**
+   - **Local de Apresentação (OPM Demandante):** Ponto tático no terreno onde o militar deveria ter se apresentado e onde o serviço foi desfalcado (ex: `18° BPM`).
+   - **OPM de Origem do Militar:** Unidade administrativa de lotação do policial ausente (ex: `14° BPM`, `16° BPM`).
+2. **Parser de Múltiplos Policiais e Renderização em Cards Táticos:**
+   - O campo `IDENTIFICAÇÃO DO POLICIAL FALTOSO` desmembra múltiplos militares separados por ponto-e-vírgula (`;`) ou quebra de linha.
+   - Na visualização da tabela, cada policial militar é renderizado como um card independente com fundo `rose-50/90`, borda `rose-200/80` e ponto indicador vermelho, impedindo linhas infinitas horizontais e facilitando a leitura rápida em reuniões de estado-maior.
+
+---
+**Nota Técnica:** Este manual estabelece um patamar de alta engenharia, garantindo um sistema operacional de blindagem máxima de tráfego, design imponente e integridade matemática impecável para todos os módulos (Ocorrências, Escalas e Faltas Operacionais).
+
 

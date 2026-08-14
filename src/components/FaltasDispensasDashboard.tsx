@@ -30,9 +30,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const SHEET_ID = '1k2sYcmo4HzJPo-VJAvs6f8k-smH-djinRAAq-fF5BM8';
-const GID = '63164403';
-const CSV_URL = G_SHEET_CSV_URL(SHEET_ID, GID);
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYtx0hTBc1HWdOieZcs-ywXV-usnc8jHwl8Z6LU1376oj71eaRgT_p1zYix-RvZHIWOQ5F5icxUM9_/pub?output=csv';
 
 export const FaltasDispensasDashboard: React.FC = () => {
   const [data, setData] = useState<any[]>([]);
@@ -272,25 +270,119 @@ export const FaltasDispensasDashboard: React.FC = () => {
     }, 0);
   };
 
+  // Helper para extrair lista de militares faltosos limpa
+  const parseFaltososList = (text: string): string[] => {
+    if (!text) return [];
+    const clean = String(text).trim();
+    if (!clean || ['0', '-', 'NADA', 'NENHUM', 'SEM FALTAS', 'NÃO HOUVE', 'NAO HOUVE', 'NEGATIVO', 'SEM ALTERACAO', 'SEM ALTERAÇÃO'].includes(clean.toUpperCase())) {
+      return [];
+    }
+    // Divide por ';' ou quebra de linha
+    return clean
+      .split(/;|\n/)
+      .map(s => s.trim().replace(/^,|,$/g, ''))
+      .filter(s => s.length > 2 && !['0', '-', 'NENHUM'].includes(s.toUpperCase()));
+  };
+
+  // Helper para extrair a OPM de origem de um texto de faltoso (ex: "1° SGT JOSÉ RG:99999 14° BPM")
+  const extractOriginOPM = (text: string): string => {
+    const match = text.match(/(?:(?:RG:?\s*\d+\s+)|(?:\b))((?:\d+°?\s*BPM)|(?:UP\/PM)|(?:BP\w+)|(?:CPA)|(?:BOPE)|(?:BAC)|(?:GAM)|(?:BPTUR)|(?:BPRV)|(?:CME)|(?:COE))\b/i);
+    if (match && match[1]) {
+      return match[1].toUpperCase().replace(/\s+/g, ' ');
+    }
+    const matchGenericBpm = text.match(/(\d+°?\s*BPM)/i);
+    if (matchGenericBpm) {
+      return matchGenericBpm[1].toUpperCase();
+    }
+    return 'NÃO ESPECIFICADA';
+  };
+
+  // Helper para contar policiais faltosos
+  const countFaltososInRow = (item: any): number => {
+    const keys = Object.keys(item);
+
+    // 1. Procurar coluna de texto de identificação de faltosos
+    const faltosoKey = keys.find(k => {
+      const norm = normalize(k);
+      return norm.includes('identificacao') || norm.includes('faltoso') || norm.includes('relacao');
+    });
+
+    if (faltosoKey && item[faltosoKey]) {
+      const list = parseFaltososList(item[faltosoKey]);
+      if (list.length > 0) {
+        return list.length;
+      }
+    }
+
+    // 2. Procurar coluna de quantidade de falta
+    const qtdKey = keys.find(k => {
+      const norm = normalize(k);
+      return (norm.includes('qtd') || norm.includes('quantidade')) && norm.includes('falta');
+    });
+
+    if (qtdKey && item[qtdKey]) {
+      const val = parseInt(String(item[qtdKey]).replace(/[^0-9]/g, ''));
+      if (!isNaN(val) && val > 0) {
+        return val;
+      }
+    }
+
+    return 0;
+  };
+
   const totals = useMemo(() => {
+    const totalFaltosos = filteredData.reduce((acc, item) => acc + countFaltososInRow(item), 0);
     return {
-      faltas: getSumByPattern('falta', filteredData),
-      dispensas: getSumByPattern('dispensa', filteredData),
+      faltas: totalFaltosos,
       total: filteredData.length
     };
   }, [filteredData]);
 
-  // Totais Detalhados POO / POE
-  const detailedTotals = useMemo(() => {
-    return {
-      faltasPoo: getSumByDoublePatterns('falta', 'poo', filteredData),
-      faltasPoe: getSumByDoublePatterns('falta', 'poe', filteredData),
-      dispensasPoo: getSumByDoublePatterns('disp', 'poo', filteredData),
-      dispensasPoe: getSumByDoublePatterns('disp', 'poe', filteredData),
-    };
+  // Faltas por Unidade Demandante (Local de Apresentação / OPM Informante)
+  const opmDemandanteData = useMemo(() => {
+    const map: Record<string, { opm: string; faltas: number; envios: number }> = {};
+    filteredData.forEach(item => {
+      const keys = Object.keys(item);
+      const opmKey = keys.find(k => {
+        const norm = normalize(k);
+        return ['opm', 'pca', 'unidade'].some(p => norm.includes(p));
+      });
+      const opmVal = (opmKey && item[opmKey]) ? String(item[opmKey]).trim().toUpperCase() : 'OUTROS';
+      if (!map[opmVal]) {
+        map[opmVal] = { opm: opmVal, faltas: 0, envios: 0 };
+      }
+      map[opmVal].envios += 1;
+      map[opmVal].faltas += countFaltososInRow(item);
+    });
+    return Object.values(map).sort((a, b) => b.faltas - a.faltas || b.envios - a.envios);
   }, [filteredData]);
 
-  // Totais da Tabela - Soma APENAS colunas quantitativas reais
+  // Faltas por Unidade de Origem do Militar Faltoso
+  const opmOrigemData = useMemo(() => {
+    const map: Record<string, number> = {};
+    filteredData.forEach(item => {
+      const keys = Object.keys(item);
+      const faltosoKey = keys.find(k => {
+        const norm = normalize(k);
+        return norm.includes('identificacao') || norm.includes('faltoso') || norm.includes('relacao');
+      });
+      if (faltosoKey && item[faltosoKey]) {
+        const list = parseFaltososList(item[faltosoKey]);
+        list.forEach(f => {
+          const origin = extractOriginOPM(f);
+          map[origin] = (map[origin] || 0) + 1;
+        });
+      }
+    });
+
+    const entries = Object.entries(map).map(([opm, count]) => ({
+      opm,
+      faltas: count
+    }));
+    return entries.sort((a, b) => b.faltas - a.faltas);
+  }, [filteredData]);
+
+  // Totais da Tabela - Soma APENAS colunas quantitativas reais de faltas
   const tableColumnTotals = useMemo(() => {
     if (filteredData.length === 0) return {};
     const keys = Object.keys(filteredData[0]);
@@ -301,13 +393,11 @@ export const FaltasDispensasDashboard: React.FC = () => {
       
       // Filtros de segurança
       const isForbiddenText = ['email', 'nome', 'guerra', 'posto', 'grad', 'obs', 'carimbo', 'timestamp', 'celular', 'data', 'hora', 'local', 'endereco', 'dinamica', 'historico', 'relato'].some(p => normKey.includes(p));
-      const isForbiddenId = ['rg', 're', 'id', 'repm', 'unidade', 'opm', 'cod', 'cpf'].some(p => normKey === p || (normKey.startsWith(p) && !['qtd', 'falta', 'disp'].some(q => normKey.includes(q))));
+      const isForbiddenId = ['rg', 're', 'id', 'repm', 'unidade', 'opm', 'cod', 'cpf'].some(p => normKey === p || (normKey.startsWith(p) && !['qtd', 'falta'].some(q => normKey.includes(q))));
       
       const isQuantity = normKey.includes('quantidade') || 
                         normKey.includes('qtd') || 
-                        normKey.includes('falta') || 
-                        normKey.includes('disp') ||
-                        normKey.includes('poe');
+                        normKey.includes('falta');
 
       // Se for texto proibido OU não for uma coluna de quantidade, não soma
       if (isForbiddenText || isForbiddenId || !isQuantity) {
@@ -336,102 +426,97 @@ export const FaltasDispensasDashboard: React.FC = () => {
     return sums;
   }, [filteredData]);
 
-  const barData = useMemo(() => {
-    return [
-      { name: 'Faltas POO', value: detailedTotals.faltasPoo, color: '#f43f5e' },
-      { name: 'Faltas POE', value: detailedTotals.faltasPoe, color: '#f97316' },
-      { name: 'Dispensas POO', value: detailedTotals.dispensasPoo, color: '#6366f1' },
-      { name: 'Dispensas POE', value: detailedTotals.dispensasPoe, color: '#3b82f6' },
-    ];
-  }, [detailedTotals]);
+  const [chartViewMode, setChartViewMode] = useState<'demandante' | 'origem'>('demandante');
 
-    const exportPDF = () => {
+  const barData = useMemo(() => {
+    const colors = ['#f43f5e', '#38bdf8', '#fbbf24', '#a855f7', '#34d399', '#f97316', '#e11d48'];
+    const activeList = chartViewMode === 'demandante' ? opmDemandanteData : opmOrigemData;
+    
+    return activeList.slice(0, 8).map((item, idx) => ({
+      name: item.opm,
+      value: item.faltas,
+      color: colors[idx % colors.length]
+    }));
+  }, [chartViewMode, opmDemandanteData, opmOrigemData]);
+
+  const exportPDF = () => {
     const doc = new jsPDF() as any;
-    doc.setFontSize(16);
+    doc.setFontSize(13);
     doc.setTextColor(15, 23, 42); // Slate 900
-    doc.text('RELATÓRIO DE AUSÊNCIAS - EMG PM/3', 14, 15);
+    doc.text('RELATÓRIO OPERACIONAL DE FALTAS', 14, 15);
     doc.setFontSize(9);
     doc.setTextColor(100);
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 21);
 
     // 1. Quadro de Totais (Quick View)
     autoTable(doc, {
-      head: [['Resumo Operacional', 'Quantitativo']],
+      head: [['Indicador Operacional', 'Quantitativo']],
       body: [
-        ['Total de Formulários Enviados', String(totals.total)],
-        ['Total de Faltas Registradas', String(totals.faltas)],
-        ['Total de Dispensas', String(totals.dispensas)],
+        ['Formulários / Registros Transmitidos', String(totals.total)],
+        ['Total de Policiais Faltosos Registrados', String(totals.faltas)],
       ],
-      startY: 28,
+      startY: 26,
       theme: 'striped',
-      headStyles: { fillColor: [2, 132, 199], fontSize: 10 },
+      headStyles: { fillColor: [15, 23, 42], fontSize: 10 },
       styles: { fontSize: 9, cellPadding: 3 },
-      columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } }
+      columnStyles: { 1: { halign: 'center', fontStyle: 'bold', textColor: [225, 29, 72] } }
     });
 
-    // 2. Detalhamento de Ausências (Apenas Faltas > 0 ou Dispensas > 0)
+    // 2. Detalhamento de Faltas
     const detailedRows: any[] = [];
     
     // Identificar colunas dinamicamente
     const colKeys = data[0] ? Object.keys(data[0]) : [];
-    const nameCol = colKeys.find(k => normalize(k).includes('nome') || normalize(k).includes('guerra')) || '';
+    const nameCol = colKeys.find(k => normalize(k).includes('nome') || normalize(k).includes('guerra') || normalize(k).includes('escala')) || '';
     const postCol = colKeys.find(k => normalize(k).includes('posto') || normalize(k).includes('grad')) || '';
-    const faltaCol = colKeys.find(k => normalize(k).includes('falta')) || '';
-    const dispensaCol = colKeys.find(k => normalize(k).includes('dispensa')) || '';
-    const obsCols = colKeys.filter(k => {
-      const n = normalize(k);
-      return n.includes('obs') || n.includes('motivo') || n.includes('justif');
-    });
+    const opmCol = colKeys.find(k => normalize(k).includes('opm') || normalize(k).includes('unidade')) || '';
+    const turnoCol = colKeys.find(k => normalize(k).includes('turno') || normalize(k).includes('horario') || normalize(k).includes('dia')) || '';
+    const faltosoCol = colKeys.find(k => normalize(k).includes('identificacao') || normalize(k).includes('faltoso') || normalize(k).includes('relacao')) || '';
 
     filteredData.forEach(item => {
-      const fVal = parseInt(String(item[faltaCol] || 0).replace(/[^0-9]/g, '')) || 0;
-      const dVal = parseInt(String(item[dispensaCol] || 0).replace(/[^0-9]/g, '')) || 0;
+      const faltasQtd = countFaltososInRow(item);
+      const faltososText = faltosoCol && item[faltosoCol] ? String(item[faltosoCol]).trim() : '';
       
-      // Só entra no relatório se houver ausência registrada (F > 0 ou D > 0)
-      if (fVal > 0 || dVal > 0) {
-        const nomeCompleto = `${item[postCol] || ''} ${item[nameCol] || ''}`.trim();
-        const ausencias = [];
-        if (fVal > 0) ausencias.push(`${fVal} Falta(s)`);
-        if (dVal > 0) ausencias.push(`${dVal} Dispensa(s)`);
+      // Só entra no relatório se houver falta registrada
+      if (faltasQtd > 0 || (faltososText && !['0', '-', 'NADA', 'NENHUM', 'SEM FALTAS'].includes(faltososText.toUpperCase()))) {
+        const responsavel = `${item[postCol] || ''} ${item[nameCol] || ''}`.trim();
+        const opmDemandante = item[opmCol] || 'N/A';
+        const turno = item[turnoCol] || 'N/A';
         
-        let observacao = '';
-        obsCols.forEach(col => {
-          const val = String(item[col] || '').trim();
-          if (val.length > 0) {
-            observacao += (observacao ? ' | ' : '') + `${col}: ${val}`;
-          }
-        });
-
         detailedRows.push([
-          nomeCompleto || 'N/A',
-          ausencias.join(' / '),
-          observacao || 'Nenhuma observação detalhada.'
+          opmDemandante,
+          responsavel || 'N/A',
+          turno,
+          `${faltasQtd} Falta(s)`,
+          faltososText || 'Identificação não detalhada.'
         ]);
       }
     });
 
     if (detailedRows.length > 0) {
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
-      doc.text('Detalhamento de Ausências', 14, (doc as any).lastAutoTable.finalY + 12);
+      doc.text('Tabela Detalhada de Informações de Faltas', 14, (doc as any).lastAutoTable.finalY + 10);
 
       autoTable(doc, {
-        head: [['Efetivo', 'Qtd (F/D)', 'Motivo / Observação']],
+        head: [['OPM Apresentação', 'Oficial / Responsável', 'Turno / Horário', 'Qtd', 'Identificação do Policial Faltoso (Origem/RG)']],
         body: detailedRows,
-        startY: (doc as any).lastAutoTable.finalY + 16,
+        startY: (doc as any).lastAutoTable.finalY + 14,
         theme: 'grid',
-        headStyles: { fillColor: [15, 23, 42], fontSize: 9 },
-        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [15, 23, 42], fontSize: 8 },
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         columnStyles: {
-          0: { cellWidth: 45, fontStyle: 'bold' },
-          1: { cellWidth: 30, halign: 'center' },
-          2: { cellWidth: 'auto' }
+          0: { cellWidth: 28, fontStyle: 'bold' },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 32 },
+          3: { cellWidth: 16, halign: 'center', fontStyle: 'bold', textColor: [225, 29, 72] },
+          4: { cellWidth: 'auto' }
         }
       });
     } else {
       doc.setFontSize(10);
       doc.setTextColor(150);
-      doc.text('Sem ausências (faltas/dispensas) críticas registradas no período.', 14, (doc as any).lastAutoTable.finalY + 15);
+      doc.text('Nenhuma falta registrada no período selecionado.', 14, (doc as any).lastAutoTable.finalY + 15);
     }
 
     // Rodapé
@@ -440,10 +525,10 @@ export const FaltasDispensasDashboard: React.FC = () => {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text('PM/3 Dev.Fiel.26 - Relatório de Ausências', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.text('PMERJ / EMG PM/3 - Relatório de Controle de Faltas', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
     }
 
-    doc.save(`RELATORIO_AUSENCIAS_PM3_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`RELATORIO_FALTAS_PM3_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (loading) {
@@ -681,99 +766,198 @@ export const FaltasDispensasDashboard: React.FC = () => {
       </div>
 
       {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 lg:gap-6">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 lg:p-8 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 lg:w-48 lg:h-48 bg-sky-50 rounded-full -mr-16 -mt-16 lg:-mr-24 lg:-mt-24 group-hover:scale-110 transition-transform duration-500" />
-          <p className="text-[9px] lg:text-[10px] font-black text-sky-600 uppercase tracking-widest mb-1 relative z-10">Volume de Envios de Formulários</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 lg:p-7 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+          <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-1 relative z-10">Formulários Transmitidos</p>
           <div className="flex items-end gap-3 relative z-10">
-            <p className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter">{totals.total}</p>
-            <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 mb-1 lg:mb-2 uppercase italic tracking-tighter">Registros</p>
+            <p className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter">{totals.total}</p>
+            <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Envios</p>
           </div>
-          <div className="mt-6 flex items-center gap-4 relative z-10">
-             <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-rose-500" />
-                <span className="text-[9px] lg:text-[10px] font-black text-slate-500 uppercase tracking-tight text-rose-600">Faltas: {totals.faltas}</span>
-             </div>
-             <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-indigo-500" />
-                <span className="text-[9px] lg:text-[10px] font-black text-slate-500 uppercase tracking-tight text-indigo-600">Dispensas: {totals.dispensas}</span>
-             </div>
+          <p className="text-[11px] text-slate-500 font-medium mt-3 relative z-10">Registros de serviço recebidos da mesa operacional.</p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-white p-6 lg:p-7 rounded-3xl border border-rose-200/80 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+          <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1 relative z-10">Total de Policiais Faltosos</p>
+          <div className="flex items-end gap-3 relative z-10">
+            <p className="text-4xl lg:text-5xl font-black text-rose-600 tracking-tighter">{totals.faltas}</p>
+            <p className="text-[10px] font-bold text-rose-400 mb-1 uppercase tracking-wider">Militares Ausentes</p>
           </div>
+          <p className="text-[11px] text-slate-500 font-medium mt-3 relative z-10">Efetivo que não compareceu ao ponto de apresentação.</p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-6 lg:p-7 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group sm:col-span-2 lg:col-span-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500" />
+          <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1 relative z-10">OPMs com Desfalque</p>
+          <div className="flex items-end gap-3 relative z-10">
+            <p className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tighter">
+              {opmDemandanteData.filter(o => o.faltas > 0).length}
+            </p>
+            <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Unidades</p>
+          </div>
+          <p className="text-[11px] text-slate-500 font-medium mt-3 relative z-10">Locais de serviço com registros ativos de ausência.</p>
         </motion.div>
       </div>
 
+      {/* Charts Section with Tactical Context */}
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
-           <div className="flex items-center justify-between mb-8">
-             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Distribuição de Ausências</h3>
-             <div className="flex items-center gap-4">
-               {barData.map((d, i) => (
-                 <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
-                   {d.name.toUpperCase()}
-                 </div>
-               ))}
-             </div>
-           </div>
-           <div className="h-64 min-h-[256px]">
-             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={barData} width={500} height={300}>
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} domain={[0, 'dataMax + 2']} allowDecimals={false} />
-                 <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                 <Bar dataKey="value" radius={[8, 8, 8, 8]} barSize={40}>
-                   {barData.map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={entry.color} />
-                   ))}
-                    <LabelList 
-                      dataKey="value" 
-                      position="top" 
-                      style={{ fill: '#475569', fontSize: 11, fontWeight: 800 }} 
-                    />
-                 </Bar>
-               </BarChart>
-             </ResponsiveContainer>
-           </div>
+        <div className="bg-white p-6 lg:p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-6">
+          {/* Chart Header & Mode Selector */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-4 bg-rose-500 rounded-full" />
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                  {chartViewMode === 'demandante' 
+                    ? 'Distribuição de Faltas por Unidade Demandante (Local de Apresentação)' 
+                    : 'Distribuição de Faltas por Unidade de Origem do Militar'}
+                </h3>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5 ml-3.5">
+                {chartViewMode === 'demandante'
+                  ? 'Exibe onde o serviço foi desfalcado (unidade que solicitou o reforço operacional)'
+                  : 'Exibe o batalhão de lotação do policial militar que não compareceu'}
+              </p>
+            </div>
+
+            {/* Toggle View Mode */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 self-start md:self-auto">
+              <button
+                onClick={() => setChartViewMode('demandante')}
+                className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all ${
+                  chartViewMode === 'demandante'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Local de Apresentação
+              </button>
+              <button
+                onClick={() => setChartViewMode('origem')}
+                className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all ${
+                  chartViewMode === 'origem'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                OPM de Origem do Militar
+              </button>
+            </div>
+          </div>
+
+          {/* Tactical Context Banner */}
+          <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 flex items-start gap-3.5 shadow-md">
+            <Shield className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-black text-sky-300 uppercase tracking-wider text-[11px]">
+                Nota Operacional da 3ª Seção (EMG PM/3):
+              </p>
+              <p className="text-slate-300 leading-relaxed font-normal">
+                A unidade informante (ex: <strong className="text-white font-bold">18° BPM</strong>) indica o <strong className="text-sky-300">Local de Apresentação</strong> onde o militar escalado deveria ter se apresentado. Os policiais ausentes pertencem a <strong className="text-amber-300">Unidades de Origem</strong> (ex: <span className="underline decoration-amber-400">14° BPM</span>, <span className="underline decoration-amber-400">16° BPM</span>), responsáveis administrativas pelo militar.
+              </p>
+            </div>
+          </div>
+
+          {/* Bar Chart */}
+          <div className="h-64 min-h-[260px] pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={barData} width={500} height={300}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} domain={[0, 'dataMax + 1']} allowDecimals={false} />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }} 
+                  contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  formatter={(val: any) => [`${val} Policial(is) Faltoso(s)`, chartViewMode === 'demandante' ? 'Desfalque no Posto' : 'Origem da Falta']}
+                />
+                <Bar dataKey="value" radius={[8, 8, 8, 8]} barSize={36}>
+                  {barData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                  <LabelList 
+                    dataKey="value" 
+                    position="top" 
+                    style={{ fill: '#0f172a', fontSize: 11, fontWeight: 800 }} 
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-        <div className="px-8 py-5 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center bg-slate-50/50">
-          <div className="flex items-center gap-3">
-             <div className="w-1 h-5 bg-sky-500 rounded-full" />
-             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Listagem de Efetivo (Operacional)</h3>
+      {/* Main Table: Tabela de Informações de Faltas */}
+      <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+        <div className="px-6 sm:px-8 py-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 bg-slate-50/70">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-5 bg-rose-500 rounded-full" />
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Tabela de Informações de Faltas</h3>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium ml-4 mt-0.5">
+              Registros detalhados de faltas transmitidos pelas unidades operacionais ({filteredData.length} registros)
+            </p>
           </div>
         </div>
         
-        <div className="overflow-auto max-h-[600px] custom-scrollbar shadow-inner bg-white">
+        <div className="overflow-auto max-h-[620px] custom-scrollbar shadow-inner bg-white">
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-20">
               <tr className="bg-slate-900 border-b border-slate-800">
                 {data[0] && Object.keys(data[0]).map((header) => (
-                  <th key={header} className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.15em] text-sky-400 whitespace-nowrap bg-slate-900 border-b border-slate-800">
+                  <th key={header} className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-sky-400 whitespace-nowrap bg-slate-900 border-b border-slate-800">
                     {header}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 italic">
+            <tbody className="divide-y divide-slate-100">
               {filteredData.map((item, idx) => (
                 <tr 
                   key={idx} 
                   onClick={() => setSelectedRow(item)}
-                  className="hover:bg-sky-50/50 transition-all group cursor-pointer border-b border-slate-50"
+                  className="hover:bg-sky-50/40 transition-all group cursor-pointer border-b border-slate-50"
                 >
                   {data[0] && Object.keys(data[0]).map((key, vIdx) => {
                     const value = item[key];
                     const normKey = normalize(key);
+                    const isFaltosoCol = normKey.includes('identificacao') || normKey.includes('faltoso') || normKey.includes('relacao');
                     const isLongText = normKey.includes('obs') || normKey.includes('motivo') || normKey.includes('justif') || normKey.includes('desc');
                     
+                    // Renderização especial e elegante da coluna de Identificação do Policial Faltoso
+                    if (isFaltosoCol) {
+                      const faltososList = parseFaltososList(String(value || ''));
+                      
+                      return (
+                        <td key={vIdx} className="px-6 py-3.5 min-w-[280px] max-w-[440px]">
+                          {faltososList.length > 0 ? (
+                            <div className="flex flex-col gap-1.5">
+                              {faltososList.map((militar, mIdx) => (
+                                <div 
+                                  key={mIdx}
+                                  className="bg-rose-50/90 border border-rose-200/80 rounded-xl px-3 py-2 text-[11px] text-slate-800 font-medium leading-snug shadow-xs flex items-start gap-2"
+                                >
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 mt-1 shrink-0" />
+                                  <div className="flex-1 break-words font-semibold">
+                                    {militar}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-bold uppercase italic">
+                              {String(value || 'Sem Faltas')}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    }
+
                     return (
                       <td 
                         key={vIdx} 
-                        className={`px-6 py-4 text-[11px] font-bold text-slate-600 group-hover:text-slate-900 ${isLongText ? 'max-w-[250px] truncate' : 'whitespace-nowrap'}`}
+                        className={`px-6 py-4 text-[11px] font-bold text-slate-600 group-hover:text-slate-900 ${isLongText ? 'max-w-[240px] truncate' : 'whitespace-nowrap'}`}
                         title={isLongText ? String(value || '') : undefined}
                       >
                         {String(value || '-')}
@@ -786,17 +970,17 @@ export const FaltasDispensasDashboard: React.FC = () => {
             <tfoot className="sticky bottom-0 bg-slate-900 font-black text-white z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
               <tr>
                 {data[0] && Object.keys(data[0]).map((key, i) => (
-                  <td key={i} className="px-6 py-5 text-[10px] uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
-                    {i === 0 ? 'TOTAIS GERAIS' : (tableColumnTotals[key] > 0 ? <span className="text-white text-sm">{tableColumnTotals[key]}</span> : '-')}
+                  <td key={i} className="px-6 py-4 text-[10px] uppercase tracking-widest text-sky-400 border-t border-slate-800 bg-slate-900">
+                    {i === 0 ? 'TOTAIS GERAIS' : (tableColumnTotals[key] > 0 ? <span className="text-white text-sm font-black">{tableColumnTotals[key]}</span> : '-')}
                   </td>
                 ))}
               </tr>
             </tfoot>
           </table>
           {filteredData.length === 0 && (
-            <div className="p-24 text-center">
+            <div className="p-20 text-center">
               <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-sm italic">Nenhum registro localizado com os critérios informados.</p>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum registro localizado com os filtros selecionados.</p>
             </div>
           )}
         </div>

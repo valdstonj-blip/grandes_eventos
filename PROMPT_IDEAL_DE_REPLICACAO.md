@@ -31,17 +31,23 @@ Aja como um Engenheiro de Software Principal especialista na doutrina militar de
 - Crie uma tela de dados com scroll vertical interno de altura limitada ('max-h-[550px]') onde o Header de Colunas ('thead') fique flutuando ('sticky top-0 z-20 bg-slate-900 text-sky-400') e o Footer de Totais ('tfoot') fique flutuando na parte inferior ('sticky bottom-0 z-20 bg-slate-900 text-white shadow-lg').
 - As linhas da tabela devem ser clicáveis para abrir um Modal de Detalhes Completo em formato de Grid adaptativo.
 
-5. MODAL DE DETALHES DE ALTA DENSIDADE
+5. TRATAMENTO INTELIGENTE DE MILITARES FALTOSOS (CARDS EMPILHADOS)
+- Em formulários onde múltiplos policiais militares são listados na mesma célula (separados por ';' ou quebras de linha), o parser deve desmembrar os nomes e RGs em registros individuais.
+- Na tabela, renderize cada militar em um card tático empilhado com destaque visual ('bg-rose-50 border-rose-200 text-slate-800 text-xs font-semibold rounded-xl p-2.5') para evitar linhas infinitas ou truncamento ilegível.
+- Doutrina Operacional de Unidades: Diferencie claramente o Local de Apresentação (OPM demandante que teve o desfalque) da OPM de Origem do Militar (unidade administrativa de lotação).
+
+6. MODAL DE DETALHES DE ALTA DENSIDADE
 - O cabeçalho do modal deve manter o design do sistema (Slate-950 com acentos Sky Blue).
 - Ocultar Rótulos Administrativos: Exclua informações administrativas irrelevantes (carimbos de tempo, emails de formulário) e dê foco aos dados do fato histórico ou do contingente.
 - Dinâmica e Relatos: Campos de relato longo devem utilizar estilos pré-formatados ('whitespace-pre-wrap font-mono uppercase text-xs leading-relaxed text-slate-700 bg-slate-50 p-4 border border-slate-200 rounded-2xl block w-full') para manter a integridade visual original inserida pelo oficial.
 
-6. RELATÓRIOS INDEPENDENTES E LIMPOS EM PDF (jsPDF + AUTOTABLE)
-- Adicione um botão para exportar a listagem atual para PDF usando 'jspdf' e 'jspdf-autotable' em formato de paisagem ('l', 'pt', 'a4') para evitar estouro de margens laterais.
+7. RELATÓRIOS INDEPENDENTES E LIMPOS EM PDF (jsPDF + AUTOTABLE)
+- Adicione botão para exportar a listagem atual para PDF usando 'jspdf' e 'jspdf-autotable' em formato de paisagem ('l', 'pt', 'a4') para evitar estouro de margens laterais.
 - A tabela impressa deve usar as cores oficiais da corporação nos headers ('fillColor: [15, 23, 42]' para Deep Navy, e text-sky-400, com 'alternateRowStyles' usando '#f8fafc').
 - Habilite a quebra de linha por célula utilizando 'overflow: linebreak' para evitar perda de descrições e relatos longos nas margens da folha.
+- Mantenha o relatório limpo e direto ao ponto operacional, sem carimbos ou cabeçalhos burocráticos repetitivos.
 
-7. RESOLUÇÃO AUTOMÁTICA DE TELA EM BRANCO (GITHUB PAGES ROUTING PATCH)
+8. RESOLUÇÃO AUTOMÁTICA DE TELA EM BRANCO (GITHUB PAGES ROUTING PATCH)
 - O index.html do projeto deve conter um script imediato para lidar de forma nativa com redirecionamentos errados de barra final ('trailing-slash') em ambientes do GitHub Pages para evitar carregamento incorreto absoluto dos caminhos de bundle.
 ```
 

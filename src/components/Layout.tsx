@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Activity, LogOut, UserCheck } from 'lucide-react';
+import { Shield, Activity, LogOut, UserCheck, Users } from 'lucide-react';
 import { DashboardTab } from '../types';
 import { UserSession } from './Login';
 
@@ -33,12 +33,31 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <nav className="hidden sm:flex items-center gap-1">
-              <div className="px-3 md:px-5 py-2 rounded-xl flex items-center gap-2 bg-sky-500/20 border border-sky-500/30 text-sky-300 font-bold text-[10px] md:text-xs uppercase tracking-wider">
-                <Activity className="w-3.5 h-3.5 md:w-4 md:h-4 text-sky-400" />
-                <span>Ocorrências & Relatórios</span>
-              </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <nav className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-2xl border border-slate-800">
+              <button
+                onClick={() => setActiveTab('ocorrencias')}
+                className={`px-3 md:px-4 py-1.5 rounded-xl flex items-center gap-1.5 font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all ${
+                  activeTab === 'ocorrencias'
+                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Ocorrências</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('faltas-dispensas')}
+                className={`px-3 md:px-4 py-1.5 rounded-xl flex items-center gap-1.5 font-bold text-[10px] md:text-xs uppercase tracking-wider transition-all ${
+                  activeTab === 'faltas-dispensas'
+                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Faltas & Efetivo</span>
+              </button>
             </nav>
 
             {session && (
@@ -82,7 +101,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 md:gap-12">
             <div className="group">
               <p className="text-[10px] text-sky-400/80 font-black uppercase tracking-widest mb-1">CHEFE DA PM/3</p>
-              <p className="text-sm text-slate-100 font-black tracking-tight group-hover:text-sky-300 transition-colors uppercase">TEN. CORONEL MOREIRA</p>
+              <p className="text-sm text-slate-100 font-black tracking-tight group-hover:text-sky-300 transition-colors uppercase">CORONEL CHRISTOPH</p>
             </div>
             <div className="w-px h-8 bg-slate-800 hidden sm:block" />
             <div className="group">
@@ -92,7 +111,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
             <div className="w-px h-8 bg-slate-800 hidden sm:block" />
             <div className="group">
               <p className="text-[10px] text-sky-400/80 font-black uppercase tracking-widest mb-1">OFICIAL ENCARREGADO</p>
-              <p className="text-sm text-slate-100 font-black tracking-tight group-hover:text-sky-300 transition-colors uppercase">MAJOR CONSTÂNCIO</p>
+              <p className="text-sm text-slate-100 font-black tracking-tight group-hover:text-sky-300 transition-colors uppercase">CAPITÃO TRAVAGLIA</p>
             </div>
           </div>
           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 shrink-0">

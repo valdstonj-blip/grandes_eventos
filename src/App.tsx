@@ -6,9 +6,12 @@
 import { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { OcorrenciasDashboard } from './components/OcorrenciasDashboard';
+import { FaltasDispensasDashboard } from './components/FaltasDispensasDashboard';
 import { Login, UserSession } from './components/Login';
+import { DashboardTab } from './types';
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<DashboardTab>('ocorrencias');
   const [session, setSession] = useState<UserSession | null>(() => {
     const saved = localStorage.getItem('pm3_user_session');
     if (saved) {
@@ -36,8 +39,12 @@ export default function App() {
   }
 
   return (
-    <Layout activeTab="ocorrencias" setActiveTab={() => {}} session={session} onLogout={handleLogout}>
-      <OcorrenciasDashboard />
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab} session={session} onLogout={handleLogout}>
+      {activeTab === 'ocorrencias' ? (
+        <OcorrenciasDashboard />
+      ) : (
+        <FaltasDispensasDashboard />
+      )}
     </Layout>
   );
 }
