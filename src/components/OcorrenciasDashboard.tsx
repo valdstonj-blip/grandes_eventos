@@ -780,25 +780,25 @@ export const OcorrenciasDashboard: React.FC = () => {
   return (
     <div className="space-y-8 pb-20">
       {/* Top View Mode Switcher */}
-      <div className="bg-[#0f172a] p-2 sm:p-2.5 rounded-2xl border border-sky-600/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
-        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800/80 w-full sm:w-auto">
+      <div className="bg-[#0f172a] p-2 sm:p-2.5 rounded-xl border border-blue-900/60 shadow-md shadow-blue-950/20 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-lg border border-slate-800/80 w-full sm:w-auto">
           <button
             onClick={() => setViewMode('native')}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               viewMode === 'native'
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+                ? 'bg-blue-600 text-white shadow-sm border border-blue-400'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-300 shrink-0" />
+            <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-300 shrink-0" />
             <span className="hidden sm:inline">Painel Operacional PM/3</span>
             <span className="sm:hidden">Painel PM/3</span>
           </button>
           <button
             onClick={() => setViewMode('looker')}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               viewMode === 'looker'
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+                ? 'bg-blue-600 text-white shadow-sm border border-blue-400'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
@@ -808,20 +808,20 @@ export const OcorrenciasDashboard: React.FC = () => {
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-[10px] font-extrabold text-sky-300/80 uppercase tracking-widest px-3">
+        <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-blue-300/90 uppercase tracking-widest px-3">
           <span>Modo de Visualização Ativo</span>
         </div>
       </div>
 
       {viewMode === 'looker' ? (
-        <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+        <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 transition-all space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
-              <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
-                <LayoutDashboard className="w-5 h-5 text-sky-600" />
+              <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5 text-blue-600" />
                 Dashboard Looker Studio (Data Studio)
               </h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Visualização em tempo real sincronizada via Google Data Studio.
               </p>
             </div>
@@ -831,14 +831,14 @@ export const OcorrenciasDashboard: React.FC = () => {
                 href="https://datastudio.google.com/embed/reporting/a6849902-dac8-4b3e-94cb-910bf12e7515/page/p_0xf1bt4p2c"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-95"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-sky-600" />
+                <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
                 <span>Abrir em Nova Aba</span>
               </a>
               <button
                 onClick={() => setViewMode('native')}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-95"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Voltar ao Painel PM/3</span>
@@ -846,14 +846,14 @@ export const OcorrenciasDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-amber-900">
+          <div className="bg-amber-500/15 border border-amber-400/40 rounded-lg p-3.5 flex items-start gap-2.5 text-xs text-amber-950">
             <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-extrabold uppercase tracking-wide">Aviso de Autenticação Google:</span> O Looker Studio (Data Studio) exige login em conta Google autorizada. Se a visualização abaixo não carregar ou exigir permissão, utilize o botão <span className="font-black text-sky-700 uppercase">"Abrir em Nova Aba"</span> acima para acessar logado na sua conta Google.
+              <span className="font-bold uppercase tracking-wide">Aviso de Autenticação Google:</span> O Looker Studio (Data Studio) exige login em conta Google autorizada. Se a visualização abaixo não carregar ou exigir permissão, utilize o botão <span className="font-bold text-blue-700 uppercase">"Abrir em Nova Aba"</span> acima para acessar logado na sua conta Google.
             </div>
           </div>
 
-          <div className="w-full rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 shadow-inner p-1">
+          <div className="w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-inner p-1">
             <iframe
               width="100%"
               height="800"
@@ -862,14 +862,14 @@ export const OcorrenciasDashboard: React.FC = () => {
               style={{ border: 0 }}
               allowFullScreen
               sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-              className="w-full h-[650px] md:h-[800px] rounded-xl"
+              className="w-full h-[650px] md:h-[800px] rounded-lg"
             />
           </div>
         </div>
       ) : (
         <>
           {/* Search and Action Controls */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl flex flex-col gap-4 relative z-40">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 transition-all flex flex-col gap-4 relative z-40">
         <div className="flex flex-col gap-3 w-full">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
             {/* CPA Dropdown */}
@@ -880,14 +880,14 @@ export const OcorrenciasDashboard: React.FC = () => {
                   setIsOPMDropdownOpen(false);
                   setIsTurnoDropdownOpen(false);
                 }}
-                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500/20 shadow-xs outline-none transition-all text-left font-bold tracking-wider uppercase active:bg-slate-100 hover:border-blue-300"
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <Filter className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <Filter className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   {selectedCPAs.length === 0 ? (
-                    <span className="text-slate-500 font-extrabold truncate">Todos os CPAs</span>
+                    <span className="text-slate-500 font-semibold truncate">Todos os CPAs</span>
                   ) : (
-                    <span className="text-sky-600 font-extrabold truncate">
+                    <span className="text-blue-700 font-bold truncate">
                       {selectedCPAs.length} CPA(s)
                     </span>
                   )}
@@ -898,11 +898,11 @@ export const OcorrenciasDashboard: React.FC = () => {
               {isCPADropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setIsCPADropdownOpen(false)} />
-                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
-                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200/90 rounded-xl shadow-xl shadow-slate-300/40 z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">
                       <span>Selecione os CPAs</span>
                       {selectedCPAs.length > 0 && (
-                        <button onClick={() => setSelectedCPAs([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                        <button onClick={() => setSelectedCPAs([])} className="text-rose-600 hover:text-rose-700 transition-colors text-[10px] font-bold">
                           Limpar
                         </button>
                       )}
@@ -919,12 +919,12 @@ export const OcorrenciasDashboard: React.FC = () => {
                               setSelectedCPAs([...selectedCPAs, cpa]);
                             }
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-left transition-all ${
+                            isSelected ? 'bg-blue-50 text-blue-900 border-l-4 border-l-blue-600' : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           <span>{cpa}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
                         </button>
                       );
                     })}
@@ -941,14 +941,14 @@ export const OcorrenciasDashboard: React.FC = () => {
                   setIsCPADropdownOpen(false);
                   setIsTurnoDropdownOpen(false);
                 }}
-                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500/20 shadow-xs outline-none transition-all text-left font-bold tracking-wider uppercase active:bg-slate-100 hover:border-blue-300"
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <Building2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   {selectedOPMs.length === 0 ? (
-                    <span className="text-slate-500 font-extrabold truncate">Todas OPMs</span>
+                    <span className="text-slate-500 font-semibold truncate">Todas OPMs</span>
                   ) : (
-                    <span className="text-sky-600 font-extrabold truncate">
+                    <span className="text-blue-700 font-bold truncate">
                       {selectedOPMs.length} OPM(s)
                     </span>
                   )}
@@ -959,11 +959,11 @@ export const OcorrenciasDashboard: React.FC = () => {
               {isOPMDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setIsOPMDropdownOpen(false)} />
-                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
-                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200/90 rounded-xl shadow-xl shadow-slate-300/40 z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">
                       <span>Selecione as OPMs</span>
                       {selectedOPMs.length > 0 && (
-                        <button onClick={() => setSelectedOPMs([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                        <button onClick={() => setSelectedOPMs([])} className="text-rose-600 hover:text-rose-700 transition-colors text-[10px] font-bold">
                           Limpar
                         </button>
                       )}
@@ -980,12 +980,12 @@ export const OcorrenciasDashboard: React.FC = () => {
                               setSelectedOPMs([...selectedOPMs, opm]);
                             }
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-left transition-all ${
+                            isSelected ? 'bg-blue-50 text-blue-900 border-l-4 border-l-blue-600' : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           <span>{opm}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
                         </button>
                       );
                     })}
@@ -1002,14 +1002,14 @@ export const OcorrenciasDashboard: React.FC = () => {
                   setIsCPADropdownOpen(false);
                   setIsOPMDropdownOpen(false);
                 }}
-                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20 shadow-inner outline-none transition-all text-left font-black tracking-wider uppercase active:bg-slate-100"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500/20 shadow-xs outline-none transition-all text-left font-bold tracking-wider uppercase active:bg-slate-100 hover:border-blue-300"
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <Clock className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   {selectedTurnos.length === 0 ? (
-                    <span className="text-slate-500 font-extrabold truncate">Dia / Turno / Horário</span>
+                    <span className="text-slate-500 font-semibold truncate">Dia / Turno / Horário</span>
                   ) : (
-                    <span className="text-sky-600 font-extrabold truncate">
+                    <span className="text-blue-700 font-bold truncate">
                       {selectedTurnos.length} Dia/Turno/Horário
                     </span>
                   )}
@@ -1020,11 +1020,11 @@ export const OcorrenciasDashboard: React.FC = () => {
               {isTurnoDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setIsTurnoDropdownOpen(false)} />
-                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
-                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-widest px-2">
+                  <div className="absolute left-0 mt-2 w-full bg-white border border-slate-200/90 rounded-xl shadow-xl shadow-slate-300/40 z-40 max-h-72 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                    <div className="flex justify-between items-center pb-2 mb-2 border-b border-slate-100 text-[10px] font-bold uppercase text-slate-500 tracking-wider px-2">
                       <span>Selecione Dia / Turno / Horário</span>
                       {selectedTurnos.length > 0 && (
-                        <button onClick={() => setSelectedTurnos([])} className="text-rose-500 hover:text-rose-700 transition-colors text-[10px] font-bold">
+                        <button onClick={() => setSelectedTurnos([])} className="text-rose-600 hover:text-rose-700 transition-colors text-[10px] font-bold">
                           Limpar
                         </button>
                       )}
@@ -1041,12 +1041,12 @@ export const OcorrenciasDashboard: React.FC = () => {
                               setSelectedTurnos([...selectedTurnos, turno]);
                             }
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-left transition-all ${
-                            isSelected ? 'bg-sky-50 text-sky-700 border-l-4 border-l-sky-500' : 'hover:bg-slate-50 text-slate-600'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-left transition-all ${
+                            isSelected ? 'bg-blue-50 text-blue-900 border-l-4 border-l-blue-600' : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           <span>{turno}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-sky-500" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
                         </button>
                       );
                     })}
@@ -1060,22 +1060,22 @@ export const OcorrenciasDashboard: React.FC = () => {
             {(selectedCPAs.length > 0 || selectedOPMs.length > 0 || selectedTurnos.length > 0) && (
               <button 
                 onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); setSelectedTurnos([]); }}
-                className="flex items-center justify-center gap-2 bg-rose-50 text-rose-600 border border-rose-200/60 px-4 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-rose-100/70 transition-all shadow-sm active:scale-95"
+                className="flex items-center justify-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-3.5 py-2 rounded-lg font-bold text-[10px] lg:text-xs uppercase tracking-wider hover:bg-rose-100 transition-all shadow-xs active:scale-95"
               >
-                <X className="w-3.5 h-3.5 text-rose-500" /> 
-                Limpar Todos os Filtros
+                <X className="w-3.5 h-3.5 text-rose-600" /> 
+                Limpar Filtros
               </button>
             )}
             <button 
               onClick={fetchData} 
-              className="flex items-center justify-center gap-2 bg-slate-800 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest hover:bg-emerald-500/10 transition-all shadow-sm active:scale-95"
+              className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-slate-100 border border-slate-700 px-4 py-2 rounded-lg font-bold text-[10px] lg:text-xs uppercase tracking-wider transition-all shadow-xs active:scale-95"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> 
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" /> 
               Sincronizar
             </button>
             <button 
               onClick={exportPDF} 
-              className="flex items-center justify-center gap-2 bg-sky-600 text-white px-5 py-2 rounded-xl font-bold text-[10px] lg:text-xs uppercase tracking-widest shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition-all active:scale-95"
+              className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold text-[10px] lg:text-xs uppercase tracking-wider shadow-sm shadow-blue-950/20 transition-all active:scale-95"
             >
               <FileDown className="w-3.5 h-3.5" /> 
               Exportar PDF
@@ -1086,41 +1086,41 @@ export const OcorrenciasDashboard: React.FC = () => {
         {/* Badge lists for active filters */}
         {(selectedCPAs.length > 0 || selectedOPMs.length > 0 || selectedTurnos.length > 0) && (
           <div className="flex flex-wrap gap-1.5 items-center justify-start py-1 px-1 border-t border-slate-100 pt-3">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros Ativos:</span>
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filtros Ativos:</span>
             
             {/* CPAs Badges */}
             {selectedCPAs.map(cpa => (
-              <span key={cpa} className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-400 uppercase tracking-wider">
+              <span key={cpa} className="inline-flex items-center gap-1 bg-blue-950 border border-blue-800 px-2.5 py-1 rounded-md text-[9px] font-bold text-blue-300 uppercase tracking-wider">
                 CPA: {cpa}
-                <button onClick={() => setSelectedCPAs(selectedCPAs.filter(c => c !== cpa))} className="hover:bg-slate-800 p-0.5 rounded-full transition-colors">
-                  <X className="w-2.5 h-2.5 text-sky-400" />
+                <button onClick={() => setSelectedCPAs(selectedCPAs.filter(c => c !== cpa))} className="hover:bg-blue-900 p-0.5 rounded transition-colors">
+                  <X className="w-2.5 h-2.5 text-blue-300" />
                 </button>
               </span>
             ))}
 
             {/* OPMs Badges */}
             {selectedOPMs.map(opm => (
-              <span key={opm} className="inline-flex items-center gap-1 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-sky-700 uppercase tracking-wider">
+              <span key={opm} className="inline-flex items-center gap-1 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md text-[9px] font-bold text-blue-800 uppercase tracking-wider">
                 OPM: {opm}
-                <button onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))} className="hover:bg-sky-200 p-0.5 rounded-full transition-colors">
-                  <X className="w-2.5 h-2.5 text-sky-700" />
+                <button onClick={() => setSelectedOPMs(selectedOPMs.filter(o => o !== opm))} className="hover:bg-blue-200 p-0.5 rounded transition-colors">
+                  <X className="w-2.5 h-2.5 text-blue-700" />
                 </button>
               </span>
             ))}
 
             {/* Turnos Badges */}
             {selectedTurnos.map(turno => (
-              <span key={turno} className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[9px] font-black text-amber-700 uppercase tracking-wider">
-                Dia/Turno/Horário: {turno}
-                <button onClick={() => setSelectedTurnos(selectedTurnos.filter(t => t !== turno))} className="hover:bg-amber-200 p-0.5 rounded-full transition-colors">
-                  <X className="w-2.5 h-2.5 text-amber-700" />
+              <span key={turno} className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-[9px] font-bold text-slate-700 uppercase tracking-wider">
+                Turno: {turno}
+                <button onClick={() => setSelectedTurnos(selectedTurnos.filter(t => t !== turno))} className="hover:bg-slate-200 p-0.5 rounded transition-colors">
+                  <X className="w-2.5 h-2.5 text-slate-600" />
                 </button>
               </span>
             ))}
 
             <button
               onClick={() => { setSelectedCPAs([]); setSelectedOPMs([]); setSelectedTurnos([]); }}
-              className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200/50 hover:bg-rose-100 px-2.5 py-1 rounded-lg text-[9px] font-black text-rose-700 uppercase tracking-wider transition-all active:scale-95"
+              className="inline-flex items-center gap-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 px-2.5 py-1 rounded-md text-[9px] font-bold text-rose-700 uppercase tracking-wider transition-all active:scale-95"
             >
               <X className="w-2.5 h-2.5" />
               Limpar Todos
@@ -1129,111 +1129,130 @@ export const OcorrenciasDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Redesigned Summary Metric Cards */}
+      {/* Redesigned Summary Metric Cards - Design System Standard */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Volume de Envios com separação por OPM */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black text-sky-600 uppercase tracking-wider">Volume de Formulários</span>
-            <div className="p-2 bg-sky-50 text-sky-600 rounded-xl border border-sky-100">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Volume de Envios</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100">
               <FileText className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">{totals.envio}</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Registros Total</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{totals.envio}</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase">Registros Total</span>
           </div>
-          <div className="space-y-1 my-1 max-h-[85px] overflow-y-auto pr-0.5">
+          <div className="space-y-1 my-1 max-h-[85px] overflow-y-auto pr-0.5 custom-scrollbar">
             {opmSubmissionCounts.length === 0 ? (
-              <p className="text-[10px] text-slate-400 font-bold uppercase">Sem registros</p>
+              <p className="text-[11px] text-slate-400 font-semibold uppercase">Sem registros</p>
             ) : (
               opmSubmissionCounts.map(item => (
-                <div key={item.opm} className="flex justify-between items-center text-[10px] font-extrabold text-slate-800 bg-slate-50 px-2 py-1 rounded-lg border border-slate-150">
-                  <span className="text-sky-800 font-black uppercase">{item.opm}:</span>
-                  <span className="font-mono text-slate-900 font-black">{item.count} envio(s)</span>
+                <div key={item.opm} className="flex justify-between items-center text-[10px] font-bold text-slate-800 bg-slate-50/80 px-2.5 py-1 rounded-lg border border-slate-100">
+                  <span className="text-blue-900 font-extrabold uppercase">{item.opm}:</span>
+                  <span className="font-mono text-slate-900 font-bold">{item.count} envio(s)</span>
                 </div>
               ))
             )}
           </div>
-          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px] font-black text-slate-500 uppercase">
+          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase">
             <span>Envios por OPM</span>
-            <span className="text-emerald-600 font-extrabold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live OK
+            <span className="text-emerald-700 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Sincronizado
             </span>
           </div>
         </motion.div>
 
         {/* Card 2: Detenções de Pessoas (Adultos e Adolescentes) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.05 }} 
+          className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
+        >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Detenções de Pessoas</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Detenções de Pessoas</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {totals.adultos + totals.adolescentes}
             </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Detidos Total</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase">Detidos Total</span>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] font-black uppercase text-slate-600">
-            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-extrabold">
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold uppercase">
+            <span className="text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 font-extrabold">
               Adultos: {totals.adultos}
             </span>
-            <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 font-extrabold">
+            <span className="text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 font-extrabold">
               Adolesc: {totals.adolescentes}
             </span>
           </div>
         </motion.div>
 
         {/* Card 3: Apreensão de Materiais (Armas, Perfuro, Simulacros) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.1 }} 
+          className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
+        >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-rose-600 uppercase tracking-wider">Apreensão de Armas & Materiais</span>
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl border border-rose-100">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Armas & Materiais</span>
+            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-100">
               <Shield className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {totals.armas + totals.perfuro + totals.simulacros}
             </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Itens Apreendidos</span>
+            <span className="text-[11px] font-semibold text-slate-500 uppercase">Itens Apreendidos</span>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[8.5px] font-black uppercase text-slate-600 flex-wrap">
-            <span className="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 font-extrabold">
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[9px] font-bold uppercase flex-wrap">
+            <span className="text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 font-bold">
               Armas: {totals.armas}
             </span>
-            <span className="text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 font-extrabold">
+            <span className="text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 font-bold">
               Perfuro: {totals.perfuro}
             </span>
-            <span className="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 font-extrabold">
+            <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 font-bold">
               Simul: {totals.simulacros}
             </span>
           </div>
         </motion.div>
 
         {/* Card 4: Qualificação por OPM (Apenas Presos e Armas) */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-lg relative overflow-hidden flex flex-col justify-between">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.15 }} 
+          className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between"
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">Qualificação por OPM</span>
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Qualificação por OPM</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="space-y-1.5 my-1 max-h-[85px] overflow-y-auto pr-0.5">
+          <div className="space-y-1.5 my-1 max-h-[85px] overflow-y-auto pr-0.5 custom-scrollbar">
             {opmBarData.length === 0 ? (
-              <p className="text-[10px] text-slate-400 font-bold uppercase py-2">Sem dados</p>
+              <p className="text-[11px] text-slate-400 font-semibold uppercase py-2">Sem dados</p>
             ) : (
               opmBarData.map(o => (
-                <div key={o.opm} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 text-[10px] font-extrabold text-slate-800">
-                  <span className="text-sky-800 font-black uppercase">{o.opm}</span>
+                <div key={o.opm} className="flex items-center justify-between bg-slate-50/80 p-1.5 px-2 rounded-lg border border-slate-100 text-[10px] font-bold text-slate-800">
+                  <span className="text-blue-900 font-extrabold uppercase">{o.opm}</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-900 rounded text-[9px] font-black">
+                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[9px] font-bold">
                       {o.adultos + o.adolescentes} Presos
                     </span>
-                    <span className="px-1.5 py-0.5 bg-rose-100 text-rose-900 rounded text-[9px] font-black">
+                    <span className="px-1.5 py-0.5 bg-rose-50 text-rose-800 border border-rose-200 rounded text-[9px] font-bold">
                       {o.armas + o.perfuro + o.simulacros} Armas
                     </span>
                   </div>
@@ -1241,9 +1260,9 @@ export const OcorrenciasDashboard: React.FC = () => {
               ))
             )}
           </div>
-          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px] font-black text-slate-500 uppercase">
+          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase">
             <span>Presos e Armas por OPM</span>
-            <span className="text-indigo-600 font-extrabold">{opmBarData.length} OPM(s)</span>
+            <span className="text-blue-700 font-bold">{opmBarData.length} OPM(s)</span>
           </div>
         </motion.div>
       </div>
@@ -1251,28 +1270,28 @@ export const OcorrenciasDashboard: React.FC = () => {
       {/* Quantitative Charts Section */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-2">
-          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Resumo Quantitativo de Produtividade</h3>
+          <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">Resumo Quantitativo de Produtividade</h3>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {pieDataArray.map((item, i) => (
-            <div key={i} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-center">
-              <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-4 text-center">{item.label}</p>
-              <div className="h-32 w-full relative min-h-[128px]">
+            <div key={i} className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 hover:border-blue-300 hover:shadow-md transition-all flex flex-col items-center">
+              <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider mb-3 text-center">{item.label}</p>
+              <div className="h-28 w-full relative min-h-[112px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart width={100} height={100}>
                     <Pie
                       data={[{ name: 'Valor', value: item.val }, { name: 'Diferença', value: Math.max(1, totals.envio - item.val) }]}
                       cx="50%"
                       cy="50%"
-                      innerRadius={35}
-                      outerRadius={45}
+                      innerRadius={32}
+                      outerRadius={44}
                       paddingAngle={6}
                       dataKey="value"
                       stroke="none"
                     >
                       <Cell fill={item.color} />
-                      <Cell fill="#f8fafc" />
+                      <Cell fill="#f1f5f9" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
@@ -1286,37 +1305,37 @@ export const OcorrenciasDashboard: React.FC = () => {
       </section>
 
       {/* OPM Bar Chart Section (before Detailed Records Table) */}
-      <section className="bg-white p-4 sm:p-8 rounded-[2rem] border border-slate-200 shadow-xl space-y-6">
+      <section className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-900 rounded-2xl text-sky-400 shadow-md shrink-0">
+            <div className="p-2.5 bg-blue-950 rounded-lg text-blue-300 shadow-xs shrink-0">
               <Activity className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-tight">
                 Quantitativo Operacional por OPM
               </h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                 Adultos Presos, Adolescentes, Armas, Perfurocortantes e Simulacros
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[10px] font-black uppercase">
-            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-[10px] font-bold uppercase">
+            <span className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Adultos
             </span>
-            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adol.
+            <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 font-bold">
+              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Adol.
             </span>
-            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas
+            <span className="flex items-center gap-1.5 text-rose-800 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 font-bold">
+              <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Armas
             </span>
-            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2 py-1 rounded-lg border border-sky-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-sky-500 inline-block" /> Perfuro
+            <span className="flex items-center gap-1.5 text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200 font-bold">
+              <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Perfuro
             </span>
-            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
+            <span className="flex items-center gap-1.5 text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 font-bold">
+              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" /> Simulacros
             </span>
           </div>
         </div>
@@ -1427,40 +1446,40 @@ export const OcorrenciasDashboard: React.FC = () => {
       </section>
 
       {/* Temporal Analysis Chart: Dia / Turno / Horário */}
-      <section className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xl space-y-6">
+      <section className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200/90 shadow-sm shadow-slate-200/50 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-              <Clock className="w-5 h-5 text-sky-600 shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600 shrink-0" />
               Distribuição Temporal (Dia / Turno / Horário)
             </h3>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
               Análise comparativa completa de envios, prisões, apreensões e materiais recolhidos por período
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase">
-            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2 py-1 rounded-lg border border-sky-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-sky-600 inline-block" /> Envios
+          <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase">
+            <span className="flex items-center gap-1.5 text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
+              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" /> Envios
             </span>
-            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" /> Adultos
+            <span className="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Adultos
             </span>
-            <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" /> Adol.
+            <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Adol.
             </span>
-            <span className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" /> Armas
+            <span className="flex items-center gap-1.5 text-rose-800 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
+              <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" /> Armas
             </span>
-            <span className="flex items-center gap-1.5 text-cyan-700 bg-cyan-50 px-2 py-1 rounded-lg border border-cyan-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500 inline-block" /> Perfuro
+            <span className="flex items-center gap-1.5 text-sky-800 bg-sky-50 px-2.5 py-1 rounded-md border border-sky-200">
+              <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" /> Perfuro
             </span>
-            <span className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg border border-indigo-200">
-              <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500 inline-block" /> Simulacros
+            <span className="flex items-center gap-1.5 text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+              <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" /> Simulacros
             </span>
           </div>
         </div>
 
-        <div className="w-full bg-slate-50/50 p-3 sm:p-4 rounded-xl border border-slate-200">
+        <div className="w-full bg-slate-50/50 p-3 sm:p-4 rounded-lg border border-slate-100">
           {turnoBarData.length === 0 ? (
             <p className="text-[10px] text-slate-400 font-bold text-center py-12 uppercase">Sem dados registrados para este período</p>
           ) : (
@@ -1566,41 +1585,41 @@ export const OcorrenciasDashboard: React.FC = () => {
       </section>
 
       {/* Main Data Table */}
-      <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-2xl">
-        <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+      <div className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-sm shadow-slate-200/50">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-sky-600 rounded-2xl shadow-lg shadow-sky-200">
-              <FileText className="w-5 h-5 text-white" />
+            <div className="p-2.5 bg-blue-950 rounded-lg text-blue-300 shadow-xs shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Registro Detalhado de Operações</h3>
-              <p className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">Soma de Colunas Disponível no Rodapé</p>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-tight">Registro Detalhado de Operações</h3>
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Soma de Colunas Disponível no Rodapé</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-inner">
+          <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-lg border border-slate-200 shadow-xs">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-xs font-black text-slate-600">{filteredData.length} Registros Ativos</span>
+            <span className="text-xs font-bold text-slate-700">{filteredData.length} Registros Ativos</span>
           </div>
         </div>
         
-        <div className="overflow-auto max-h-[600px] custom-scrollbar shadow-inner bg-white">
+        <div className="overflow-auto max-h-[600px] custom-scrollbar bg-white">
           <table className="w-full text-left border-separate border-spacing-0">
             <thead className="sticky top-0 z-20">
-              <tr className="bg-slate-900 border-b border-slate-800">
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Carimbo</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Dia/Turno</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Policial / Agente</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Comando (CPA)</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">OPM</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Email</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800">Local</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-900 border-b border-slate-800">Vulto?</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adultos</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Adol.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Armas</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Perfuro</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase text-center whitespace-nowrap bg-slate-800/50 border-b border-slate-800">Simul.</th>
-                <th className="px-6 py-5 text-[10px] font-black tracking-[0.15em] text-sky-400 uppercase whitespace-nowrap bg-slate-900 border-b border-slate-800 w-[360px] min-w-[320px]">Dinâmica da Ocorrência</th>
+              <tr className="bg-blue-950 border-b border-blue-900">
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Carimbo</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Dia/Turno</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Policial / Agente</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Comando (CPA)</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">OPM</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Email</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900">Local</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-950 border-b border-blue-900">Vulto?</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-900/60 border-b border-blue-900">Adultos</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-900/60 border-b border-blue-900">Adol.</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-900/60 border-b border-blue-900">Armas</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-900/60 border-b border-blue-900">Perfuro</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase text-center whitespace-nowrap bg-blue-900/60 border-b border-blue-900">Simul.</th>
+                <th className="px-5 py-3.5 text-[10px] font-bold tracking-wider text-blue-200 uppercase whitespace-nowrap bg-blue-950 border-b border-blue-900 w-[360px] min-w-[320px]">Dinâmica da Ocorrência</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 italic">

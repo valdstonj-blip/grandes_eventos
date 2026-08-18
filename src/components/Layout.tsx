@@ -14,7 +14,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, session, onLogout }) => {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       {/* Header - Navy Military Design */}
       <header className="bg-[#0f172a] border-b border-sky-600/30 shadow-[0_4px_20px_rgba(0,0,0,0.1)] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 md:py-0 md:h-16 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4">
@@ -57,13 +57,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
           {/* Navigation & Desktop User Actions */}
           <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-3 w-full md:w-auto">
-            <nav className="grid grid-cols-2 md:flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl sm:rounded-2xl border border-slate-800/80 w-full md:w-auto shadow-inner">
+            <nav className="grid grid-cols-2 md:flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 w-full md:w-auto shadow-inner">
               <button
                 onClick={() => setActiveTab('ocorrencias')}
-                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-md flex items-center justify-center gap-1.5 font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                   activeTab === 'ocorrencias'
-                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                 }`}
               >
                 <Activity className="w-3.5 h-3.5 shrink-0" />
@@ -72,10 +72,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
 
               <button
                 onClick={() => setActiveTab('faltas-dispensas')}
-                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-1.5 font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
+                className={`w-full md:w-auto px-3 sm:px-4 py-2 md:py-1.5 rounded-md flex items-center justify-center gap-1.5 font-bold text-[11px] sm:text-xs uppercase tracking-wider transition-all whitespace-nowrap ${
                   activeTab === 'faltas-dispensas'
-                    ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                 }`}
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
@@ -112,7 +112,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTa
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 bg-slate-50">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 bg-slate-100">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
